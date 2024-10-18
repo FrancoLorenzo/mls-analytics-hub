@@ -598,17 +598,17 @@ The following scripts will add extra capabilities to the MLS Analytics Hub datab
 -- Index for Year lookups in Club_stats
 CREATE INDEX idx_club_in_club_stats ON Club_stats(Year_ID);
 
---Call the indexes for fast lookups
-SHOW INDEX FROM Club_stats;
-
 -- Index for Year lookups in Player_stats
 CREATE INDEX idx_year_in_player_stats ON Player_stats(Year_ID);
 
---Call the indexes for fast lookups
-SHOW INDEX FROM Player_stats;
-
 -- Index for fast searches on standings by competition
 CREATE INDEX idx_competition_in_standings ON Standings(Competition_ID);
+
+--Call the indexes for fast lookups
+SHOW INDEX FROM Club_stats;
+
+--Call the indexes for fast lookups
+SHOW INDEX FROM Player_stats;
 
 --Call the indexes for fast lookups
 SHOW INDEX FROM Standings;
@@ -637,8 +637,6 @@ JOIN
 WHERE 
     cs.Year_ID = s.Year_ID;
 
---Call the view for club standings
-SELECT * FROM standings_club_stats_view;
 
 -- View to summarize Top scorer players per year
 CREATE OR REPLACE VIEW top_scorers_view AS
@@ -652,8 +650,6 @@ WHERE
 ORDER BY ps.Goals DESC
 LIMIT 10;
 
---Call the views for top scorers and top assist players
-SELECT * FROM top_scorers_view;
 
 -- View to summarize Top assists players per year
 CREATE OR REPLACE VIEW top_assist_players_view AS
@@ -666,6 +662,14 @@ WHERE
     ps.Year_ID = 15 -- Filter for year 2024
 ORDER BY ps.Assists DESC
 LIMIT 10;
+
+
+
+--Call the view for club standings
+SELECT * FROM standings_club_stats_view;
+
+--Call the views for top scorers and top assist players
+SELECT * FROM top_scorers_view;
 
 --Call the views for top scorers and top assist players
 SELECT * FROM top_assist_players_view;
@@ -688,8 +692,6 @@ WHERE
 ORDER BY ps.Goals DESC, ps.Assists DESC
 LIMIT 10;
 
---Call the temporary table for players to watch
-SELECT * FROM players_to_watch;
 
 -- Player Performance Comparison temporary table
 CREATE TEMPORARY TABLE player_performance_comparison AS
@@ -699,6 +701,10 @@ FROM Player p
 WHERE
     ps.Year_ID = 15
     AND p.Player_ID IN (1, 2); -- Replace with specific Player_IDs you want to compare
+
+
+--Call the temporary table for players to watch
+SELECT * FROM players_to_watch;
 
 --Call the temporary table for player performance comparison
 SELECT * FROM player_performance_comparison;
@@ -738,11 +744,6 @@ BEGIN
 END //
 
 
---Call the procedure to add a new year
-CALL add_new_year(2025); -- Replace 2025 with the actual year value   
-SELECT * FROM year WHERE YEAR = 2025;
-
-
 -- Procedure to add a new player
 CREATE PROCEDURE add_new_player(
     IN p_first_name VARCHAR(50), 
@@ -758,10 +759,6 @@ BEGIN
     INSERT INTO Player(Player_First_Name, Player_Last_Name, Birth_Date, Birthplace, Height, Weight, Position, Club_ID)
     VALUES (p_first_name, p_last_name, p_birth_date, p_birthplace, p_height, p_weight, p_position, p_club_id);
 END //
-
---Call the procedure to add a new player
-CALL add_new_player('John', 'Doe', '1990-01-01', 'New York', 1.80, 75.0, 'Forward', 1); -- Replace 1 with the actual Club_ID
-SELECT * FROM Player WHERE Player_First_Name = 'John' AND Player_Last_Name = 'Doe';
 
 
 -- Procedure to update a club's stats
@@ -780,6 +777,15 @@ BEGIN
         Total_Draws = p_total_draws
     WHERE Club_stats_ID = p_club_stats_id;
 END //
+
+
+--Call the procedure to add a new year
+CALL add_new_year(2025); -- Replace 2025 with the actual year value   
+SELECT * FROM year WHERE YEAR = 2025;
+
+--Call the procedure to add a new player
+CALL add_new_player('John', 'Doe', '1990-01-01', 'New York', 1.80, 75.0, 'Forward', 1); -- Replace 1 with the actual Club_ID
+SELECT * FROM Player WHERE Player_First_Name = 'John' AND Player_Last_Name = 'Doe';
 
 --Call the procedure to update club stats       
 CALL update_club_stats(1, 1, 2024, 1, 1, 1); -- Replace 1 with the actual Club_stats_ID
