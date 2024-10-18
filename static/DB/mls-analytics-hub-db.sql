@@ -8,30 +8,30 @@ use mls_analytics_hub_db;
 
 -- Create the Conference table
 CREATE TABLE Conference (
-    Conference_ID INT PRIMARY KEY,
+    Conference_ID INT PRIMARY KEY AUTO_INCREMENT,
     Conference_Name VARCHAR(100)
 );
 
 -- Create the Club table
 CREATE TABLE Club (
-    Club_ID INT PRIMARY KEY,
-    Conference_ID INT,
+    Club_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Conference_ID INT NULL,
     Club_Name VARCHAR(100),
-    Club_Name_Abbreviation VARCHAR(10),
-    Club_Established_date DATE,
-    Club_badge VARCHAR(255),
+    Club_Name_Abbreviation VARCHAR(10) NULL,
+    Club_Established_date DATE NULL,
+    Club_badge VARCHAR(255) NULL,
     FOREIGN KEY (Conference_ID) REFERENCES Conference(Conference_ID)
 );
 
 -- Create the Year table
 CREATE TABLE Year (
-    Year_ID INT PRIMARY KEY,
+    Year_ID INT PRIMARY KEY AUTO_INCREMENT,
     Year INT
 );
 
 -- Create the Club_stats table
 CREATE TABLE Club_stats (
-    Club_stats_ID INT PRIMARY KEY,
+    Club_stats_ID INT PRIMARY KEY AUTO_INCREMENT,
     Club_ID INT,
     Year_ID INT,
     Total_Wins INT,
@@ -43,13 +43,13 @@ CREATE TABLE Club_stats (
 
 -- Create the Competition table
 CREATE TABLE Competition (
-    Competition_ID INT PRIMARY KEY,
+    Competition_ID INT PRIMARY KEY AUTO_INCREMENT,
     Competition_Name VARCHAR(100)
 );
 
 -- Create the Player table
 CREATE TABLE Player (
-    Player_ID INT PRIMARY KEY,
+    Player_ID INT PRIMARY KEY AUTO_INCREMENT,
     Club_ID INT,
     Player_First_Name VARCHAR(50),
     Player_Last_Name VARCHAR(50),
@@ -63,7 +63,7 @@ CREATE TABLE Player (
 
 -- Create the Player_stats table
 CREATE TABLE Player_stats (
-    Player_stats_ID INT PRIMARY KEY,
+    Player_stats_ID INT PRIMARY KEY AUTO_INCREMENT,
     Player_ID INT,
     Year_ID INT,
     Goals INT,
@@ -83,7 +83,7 @@ CREATE TABLE Player_stats (
 
 -- Create the Standings table
 CREATE TABLE Standings (
-    Standing_ID INT PRIMARY KEY,
+    Standing_ID INT PRIMARY KEY AUTO_INCREMENT,
     Competition_ID INT,
     Club_stats_ID INT,
     Year_ID INT,
@@ -100,78 +100,147 @@ CREATE TABLE Standings (
 -- Index for Year lookups in Club_stats
 CREATE INDEX idx_club_in_club_stats ON Club_stats(Year_ID);
 
+--Call the indexes for fast lookups
+--SHOW INDEX FROM Club_stats;
+
 -- Index for Year lookups in Player_stats
 CREATE INDEX idx_year_in_player_stats ON Player_stats(Year_ID);
 
+--Call the indexes for fast lookups
+--SHOW INDEX FROM Player_stats;
+
 -- Index for fast searches on standings by competition
 CREATE INDEX idx_competition_in_standings ON Standings(Competition_ID);
+
+--Call the indexes for fast lookups
+--SHOW INDEX FROM Standings;
 
 ---------------------------------------
 -- Views for data retrieval
 ---------------------------------------
 
--- View to get club performance stats
-CREATE VIEW club_performance_view AS
-SELECT c.Club_Name, cs.Total_Wins, cs.Total_Losses, cs.Total_Draws, y.Year
-FROM Club c
-JOIN Club_stats cs ON c.Club_ID = cs.Club_ID
-JOIN Year y ON cs.Year_ID = y.Year_ID;
+-- View that combines Club, Club_stats, and Standings data for a summary of club standings
+CREATE OR REPLACE VIEW standings_club_stats_view AS
+SELECT 
+    y.Year,
+    c.Club_Name,
+    cs.Total_Wins,
+    cs.Total_Draws,
+    cs.Total_Losses,
+    s.Total_points
+FROM 
+    Standings s
+JOIN 
+    Club_stats cs ON s.Club_stats_ID = cs.Club_stats_ID
+JOIN 
+    Club c ON cs.Club_ID = c.Club_ID
+JOIN 
+    Year y ON cs.Year_ID = y.Year_ID
+WHERE 
+    cs.Year_ID = s.Year_ID;
 
--- View to summarize player stats
-CREATE VIEW player_summary_view AS
-SELECT p.Player_First_Name, p.Player_Last_Name, ps.Goals, ps.Assists, ps.Passes, ps.Yellow_cards, ps.Red_cards, y.Year
-FROM Player p
-JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
-JOIN Year y ON ps.Year_ID = y.Year_ID;
+--Call the view for club standings
+--SELECT * FROM standings_club_stats_view;
+
+-- View to summarize Top scorer players per year
+CREATE OR REPLACE VIEW top_scorers_view AS
+SELECT p.Player_First_Name, p.Player_Last_Name, ps.Goals, ps.Assists, c.Club_Name
+FROM
+    Player p
+    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+WHERE
+    ps.Year_ID = 15 -- Filter for year 2024
+ORDER BY ps.Goals DESC
+LIMIT 10;
+
+--Call the views for top scorers and top assist players
+--SELECT * FROM top_scorers_view;
+
+-- View to summarize Top assists players per year
+CREATE OR REPLACE VIEW top_assist_players_view AS
+SELECT p.Player_First_Name, p.Player_Last_Name, ps.Assists, c.Club_Name
+FROM
+    Player p
+    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+WHERE
+    ps.Year_ID = 15 -- Filter for year 2024
+ORDER BY ps.Assists DESC
+LIMIT 10;
+
+--Call the views for top scorers and top assist players
+--SELECT * FROM top_scorers_view;
 
 ---------------------------------------
 -- Temporary Tables for Data Processing
 ---------------------------------------
 
--- Create a temporary table to hold top players by goals in the current year
-CREATE TEMPORARY TABLE top_goal_scorers_temp AS
-SELECT p.Player_ID, p.Player_First_Name, p.Player_Last_Name, ps.Goals
-FROM Player_stats ps
-JOIN Player p ON p.Player_ID = ps.Player_ID
-WHERE ps.Year_ID = (SELECT Year_ID FROM Year WHERE Year = 2024)
-ORDER BY ps.Goals DESC;
+-- Players to watch temporary table
+CREATE TEMPORARY TABLE players_to_watch AS
+SELECT p.Player_ID, p.Player_First_Name, p.Player_Last_Name, ps.Goals, ps.Assists, ps.Yellow_cards, ps.Red_cards
+FROM Player p
+    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+WHERE
+    ps.Year_ID = 15
+    AND (
+        ps.Goals >= 10
+        OR ps.Assists >= 5
+    )
+ORDER BY ps.Goals DESC, ps.Assists DESC
+LIMIT 10;
 
+--Call the temporary table for players to watch
+--SELECT * FROM players_to_watch;
+
+-- Player Performance Comparison temporary table
+CREATE TEMPORARY TABLE player_performance_comparison AS
+SELECT p.Player_ID, p.Player_First_Name, p.Player_Last_Name, ps.Goals, ps.Assists, ps.Passes_complete, ps.Yellow_cards, ps.Red_cards
+FROM Player p
+    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+WHERE
+    ps.Year_ID = 15
+    AND p.Player_ID IN (1, 2); -- Replace with specific Player_IDs you want to compare
+
+--Call the temporary table for player performance comparison
+--SELECT * FROM player_performance_comparison;
 
 ----------------------------------------
 -- Triggers for data integrity
 ----------------------------------------
 
 -- Trigger to update standings total points after club stats are updated
-CREATE TRIGGER update_standings_after_club_stats
-AFTER UPDATE ON Club_stats
+CREATE TRIGGER update_total_points
+AFTER UPDATE ON club_stats
 FOR EACH ROW
 BEGIN
-    DECLARE total_wins INT;
-    DECLARE total_draws INT;
-    DECLARE total_losses INT;
-    DECLARE total_points INT;
+    -- Update the Total_points in the standings table after any update in club_stats
+    UPDATE standings s
+    JOIN club_stats cs ON s.Club_stats_ID = cs.Club_stats_ID
+    SET s.Total_points = (cs.Total_Wins * 3) + (cs.Total_Draws)
+    WHERE s.Club_stats_ID = NEW.Club_stats_ID;
+END //
 
-    -- Retrieve the updated total wins, losses, and draws
-    SET total_wins = NEW.Total_Wins;
-    SET total_draws = NEW.Total_Draws;
-    SET total_losses = NEW.Total_Losses;
-
-    -- Calculate total points: 3 points per win, 1 point per draw, 0 points per loss
-    SET total_points = (total_wins * 3) + (total_draws * 1);
-
-    -- Update the standings table with the calculated total points
-    UPDATE Standings
-    SET Total_points = total_points
-    WHERE Club_stats_ID = NEW.Club_stats_ID;
-END;
-
+--Call the trigger to update total points
+--UPDATE club_stats SET Total_Wins = 2, Total_Draws = 1, Total_Losses = 0 WHERE Club_stats_ID = 1; -- Replace 1 with the actual Club_stats_ID
 
 ----------------------------------------
 -- Stored Procedures for CRUD operations
 ----------------------------------------
 
+-- Procedure to add a new year
+CREATE PROCEDURE add_new_year(
+    IN p_year_value INT
+)
+BEGIN
+    INSERT INTO year (Year_Value)
+    VALUES (p_year_value);
+END //
+
+--Call the procedure to add a new year
+--CALL add_new_year(2025); -- Replace 2025 with the actual year value   
+
 -- Procedure to add a new player
-DELIMITER //
 CREATE PROCEDURE add_new_player(
     IN p_first_name VARCHAR(50), 
     IN p_last_name VARCHAR(50),
@@ -186,35 +255,60 @@ BEGIN
     INSERT INTO Player(Player_First_Name, Player_Last_Name, Birth_Date, Birthplace, Height, Weight, Position, Club_ID)
     VALUES (p_first_name, p_last_name, p_birth_date, p_birthplace, p_height, p_weight, p_position, p_club_id);
 END //
-DELIMITER ;
 
+--Call the procedure to add a new player
+--CALL add_new_player('John', 'Doe', '1990-01-01', 'New York', 1.80, 75.0, 'Forward', 1); -- Replace 1 with the actual Club_ID
+
+
+-- Procedure to update a club's stats
+CREATE PROCEDURE update_club_stats(
+    IN p_club_stats_id INT,
+    IN p_club_id INT,
+    IN p_year INT,	
+    IN p_total_wins INT,
+    IN p_total_losses INT,
+    IN p_total_draws INT
+)
+BEGIN
+    UPDATE club_stats
+    SET Total_Wins = p_total_wins,
+        Total_Losses = p_total_losses,
+        Total_Draws = p_total_draws
+    WHERE Club_stats_ID = p_club_stats_id;
+END //
+
+--Call the procedure to update club stats       
+--CALL update_club_stats(1, 1, 2024, 1, 1, 1); -- Replace 1 with the actual Club_stats_ID
 
 ----------------------------------------
 -- Functions for data processing
 ----------------------------------------
 
--- Function to calculate the win ratio for a club
+-- Function to calculate the win percentage for a club
 DELIMITER //
-CREATE FUNCTION get_win_ratio(club_id INT, year_id INT)
+
+CREATE FUNCTION calculate_win_percentage(p_club_stats_id INT)
 RETURNS DECIMAL(5,2)
 DETERMINISTIC
 BEGIN
-    DECLARE wins INT;
-    DECLARE games_played INT;
-    DECLARE win_ratio DECIMAL(5,2);
+    DECLARE win_percentage DECIMAL(5,2);
 
-    -- Get total wins and games played for the given club and year
-    SELECT Total_Wins, (Total_Wins + Total_Losses + Total_Draws)
-    INTO wins, games_played
-    FROM Club_stats
-    WHERE Club_ID = club_id AND Year_ID = year_id;
+    -- Calculate win percentage using a CASE statement to avoid division by zero
+    SELECT 
+        CASE 
+            WHEN (Total_Wins + Total_Draws + Total_Losses) = 0 THEN 0
+            ELSE (Total_Wins / (Total_Wins + Total_Draws + Total_Losses)) * 100
+        END
+    INTO win_percentage
+    FROM club_stats
+    WHERE Club_stats_ID = p_club_stats_id;
 
-    IF games_played > 0 THEN
-        SET win_ratio = (wins / games_played) * 100;
-    ELSE
-        SET win_ratio = 0;
-    END IF;
-
-    RETURN win_ratio;
+    RETURN win_percentage;
 END //
+
 DELIMITER ;
+
+
+--Call the function to calculate win percentage
+--SELECT calculate_win_percentage(1);  -- Replace 1 with the actual Club_stats_ID
+
