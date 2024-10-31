@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MLS Analytics Hub{% endblock %}</title>
+    <!-- Link to Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+<!-- Header Section -->
+<header class="bg-dark text-white">
+    <div class="container d-flex justify-content-between align-items-center py-3">
+        <div class="header-logo">
+            <a href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='img/mls-analytics-hub-logo.png') }}" alt="MLS Logo" class="img-fluid" style="height: 40px;">
+            </a>
+        </div>
+        <nav>
+            <ul class="nav">
+                <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.index') }}">Home</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.clubs') }}">Clubs</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="#">Standings</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="#">Stats</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="#">Players</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<!-- Main Content Section -->
+<main class="container my-5">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer Section -->
+<footer class="bg-dark text-white py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-2">
+                <ul class="list-unstyled">
+                    <li><a href="#" class="text-white">Follow us</a></li>
+                </ul>
+            </div>
+            <!-- Add more footer sections as needed -->
+        </div>
+    </div>
+</footer>
+
+<!-- Bootstrap JS and dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

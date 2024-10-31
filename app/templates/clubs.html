@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}Clubs - MLS Analytics Hub{% endblock %}
+
+{% block content %}
+    <h1>MLS Clubs</h1>
+    <p>Here is the list of MLS clubs with additional details.</p>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Club Name</th>
+                <th>Club abbreviation</th>
+                <th>Club Badge</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for club in clubs %}
+                <tr>
+                    <td>{{ club[0] }}</td>
+                    <td>{{ club[1] }}</td>
+                    <td>{{ club[2] }}</td>
+                    <td>{{ club[3] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block title %}Home - MLS Analytics Hub{% endblock %}
+
+{% block content %}
+    <h1>Welcome to the MLS Analytics Hub!</h1>
+    <p>This web application is designed to create and manage a comprehensive fantasy database for the MLS soccer league.</p>
+    <p>In this project, you'll find a database system that simulates real-world values through mocked data, allowing users to explore various aspects of the league, including player statistics, team performance, and match outcomes. The application supports essential CRUD (Create, Read, Update, Delete) operations, making it a versatile tool for soccer enthusiasts and data analysts alike.</p>
+    <p>Join me to delve into the exciting world of MLS and unlock insights that can enhance your fantasy league experience!</p>
+    <div class="text-center">
+        <img src="{{ url_for('static', filename='img/mls-analytics-hub-logo.png') }}" alt="MLS Logo" class="img-fluid" style="height: 400px;">
+    </div>
+{% endblock %}
+
