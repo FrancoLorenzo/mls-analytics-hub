@@ -25,7 +25,7 @@ def clubs():
     conferences = cursor.fetchall()
     
     # Fetch all clubs by default (no filter)
-    cursor.execute("SELECT Club_Name, Club_Name_Abbreviation, Club_badge FROM Club WHERE Club_Name != 'Free Agent'")
+    cursor.execute("SELECT Club_ID, Club_Name, Club_Name_Abbreviation, Club_badge FROM Club WHERE Club_Name != 'Free Agent'")
     clubs = cursor.fetchall()
     
     connection.close()
@@ -68,4 +68,67 @@ def create_club():
     
     flash('Club added successfully!')
     return redirect(url_for('main.clubs'))
+
+
+##############################################################################################################################
+
+# app/routes.py
+
+# @main.route('/club/<int:club_id>/edit', methods=['GET'])
+# def edit_club(club_id):
+#     # Connect to the database and fetch club details
+#     connection = get_db_connection()
+#     cursor = connection.cursor()
+#     cursor.execute("SELECT * FROM Club WHERE Club_ID = ?", (club_id,))
+#     club = cursor.fetchone()
+#     cursor.close()
+#     connection.close()
+
+#     # Render the update_club.html template with club data
+#     return render_template('club/update_club.html', club=club)
+
+@main.route('/club/<int:club_id>/edit', methods=['GET'])
+def edit_club(club_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch club details
+    cursor.execute("SELECT * FROM Club WHERE Club_ID = ?", (club_id,))
+    club = cursor.fetchone()
+
+    # Fetch all available conferences for dropdown
+    cursor.execute("SELECT Conference_ID, Conference_Name FROM Conference")
+    conferences = cursor.fetchall()  # Each entry contains Conference_ID and Conference_Name
+
+    cursor.close()
+    connection.close()
+
+    return render_template('club/update_club.html', club=club, conferences=conferences)
+
+
+
+@main.route('/club/<int:club_id>/update', methods=['POST'])
+def update_club(club_id):
+    # Get form data
+    conference_id = request.form['conference_id']
+    club_name = request.form['club_name']
+    club_abbr = request.form['club_abbr']
+    established_date = request.form['established_date']
+    club_badge = request.form['club_badge']
+
+    # Connect to the database and update the club
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "UPDATE Club SET Conference_ID = ?, Club_Name = ?, Club_Name_Abbreviation = ?, "
+        "Club_Established_date = ?, Club_badge = ? WHERE Club_ID = ?",
+        (conference_id, club_name, club_abbr, established_date, club_badge, club_id)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    flash('Club updated successfully!')
+    return redirect(url_for('main.clubs'))
+
 

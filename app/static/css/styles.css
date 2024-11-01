@@ -76,3 +76,9 @@ footer {
 .footer-section a:hover {
     color: #ccc !important;
 }
+
+
+.form-control {
+    max-width: 400px; /* Adjust the width as needed */
+    width: 100%;
+}

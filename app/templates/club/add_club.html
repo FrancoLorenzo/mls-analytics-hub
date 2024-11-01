@@ -4,6 +4,8 @@
 
 {% block content %}
     <h1>Add a New Club</h1>
+    <p>Add the details for the new club.</p>
+    <br>
     <form action="{{ url_for('main.create_club') }}" method="post">
       <div class="form-group">
           <label for="conference_id">Conference:</label>
@@ -30,7 +32,8 @@
           <label for="club_badge">Club Badge URL:</label>
           <input type="text" id="club_badge" name="club_badge" class="form-control">
       </div>
-      <button type="submit" class="btn btn-success mt-2">Submit Club</button>
+      <button type="submit" class="btn btn-success">Save</button>
+      <a href="{{ url_for('main.clubs') }}" class="btn btn-secondary">Cancel</a>
   </form>
 
     <!-- Flash Messages for Feedback -->

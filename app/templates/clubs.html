@@ -14,16 +14,22 @@
                 <th>Club Name</th>
                 <th>Club Abbreviation</th>
                 <th>Club Badge</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for club in clubs %}
                 <tr>
-                    <td>{{ club[0] }}</td>
                     <td>{{ club[1] }}</td>
-                    <td><img src="{{ club[2] }}" alt="{{ club[0] }} Badge" width="50"></td>
+                    <td>{{ club[2] }}</td>
+                    <td><img src="{{ club[3] }}" alt="{{ club[1] }} Badge" width="50"></td>
+                    <td>
+                        <!-- Link to update club with Club_ID as the parameter -->
+                        <a href="{{ url_for('main.edit_club', club_id=club[0]) }}" class="btn btn-primary mt-2">Edit</a>
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 {% endblock %}
+
