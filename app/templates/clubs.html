@@ -6,11 +6,13 @@
     <h1>MLS Clubs</h1>
     <p>Here is the list of MLS clubs with additional details.</p>
 
-    <table class="table table-striped">
+    <a href="{{ url_for('main.add_club_page') }}" class="btn btn-primary mt-2">Add Club</a>
+
+    <table class="table table-striped mt-3">
         <thead>
             <tr>
                 <th>Club Name</th>
-                <th>Club abbreviation</th>
+                <th>Club Abbreviation</th>
                 <th>Club Badge</th>
             </tr>
         </thead>
@@ -19,8 +21,7 @@
                 <tr>
                     <td>{{ club[0] }}</td>
                     <td>{{ club[1] }}</td>
-                    <td>{{ club[2] }}</td>
-                    <td>{{ club[3] }}</td>
+                    <td><img src="{{ club[2] }}" alt="{{ club[0] }} Badge" width="50"></td>
                 </tr>
             {% endfor %}
         </tbody>
