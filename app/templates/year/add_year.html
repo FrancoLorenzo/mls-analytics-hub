@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}Add New Year{% endblock %}
+
+{% block content %}
+    <h1>Add a New Year</h1>
+    <p>Add the details for the new year.</p>
+    <br>
+    <form action="{{ url_for('main.create_year') }}" method="post">
+      <div class="form-group">
+          <label for="club_name">Year:</label>
+          <input type="text" id="year" name="year" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-success">Save</button>
+      <a href="{{ url_for('main.years') }}" class="btn btn-secondary">Cancel</a>
+  </form>
+
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info" role="alert">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+{% endblock %}

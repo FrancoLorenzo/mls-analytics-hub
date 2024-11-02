@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}Update Year{% endblock %}
+
+{% block content %}
+<h1>Update Year</h1>
+<p>Update the details for the {{ year['Year'] }} year.</p>
+<br>
+<br>
+<form action="{{ url_for('main.update_year', year_id=year['Year_ID']) }}" method="POST">
+
+    <!-- Year Details -->
+    <div class="form-group row">
+        <label for="year" class="col-sm-3 col-form-label">Year:</label>
+        <div class="col-sm-9">
+            <input type="text" name="year" id="year" value="{{ year['Year'] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <br><br>
+    <!-- Submit and Cancel Buttons -->
+    <div class="form-group row">
+        <div class="col-sm-9 offset-sm-3">
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <a href="{{ url_for('main.years') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

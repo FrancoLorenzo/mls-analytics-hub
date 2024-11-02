@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from .db_connection import get_db_connection, delete_club  # Ensure this is the correct DB connection function
+from .db_connection import get_db_connection, delete_club  
 
 
 main = Blueprint('main', __name__)
@@ -9,13 +9,16 @@ def index():
     # Fetch clubs for the index page if needed
     connection = get_db_connection()
     cursor = connection.cursor()
-    cursor.execute("SELECT club_id, club_name FROM Club")  # Adjust to your actual column names
+    cursor.execute("SELECT club_id, club_name FROM Club") 
     clubs = cursor.fetchall()
     connection.close()
     
     return render_template('index.html', clubs=clubs)
 
 
+# --------------------------------------------------------------------------------------------------------------------
+# Club route details
+# Club route
 @main.route('/clubs', methods=['GET', 'POST'])
 def clubs():
     connection = get_db_connection()
@@ -42,19 +45,19 @@ def clubs():
     return render_template('clubs.html', clubs=clubs, conferences=conferences, selected_conference=conference_id)
 
 
-
+# Add club route
 @main.route('/add_club', methods=['GET'])
 def add_club_page():
     # Connect to the database and fetch conference information
     connection = get_db_connection()
     cursor = connection.cursor()
-    cursor.execute("SELECT conference_id, conference_name FROM Conference")  # Adjust column names if needed
+    cursor.execute("SELECT conference_id, conference_name FROM Conference")  
     conferences = cursor.fetchall()
     connection.close()
     
     return render_template('club/add_club.html', conferences=conferences)
 
-
+# Create club route
 @main.route('/create_club', methods=['POST'])
 def create_club():
     # Get form data
@@ -80,7 +83,7 @@ def create_club():
     return redirect(url_for('main.clubs'))
 
 
-
+# Edit club route
 @main.route('/club/<int:club_id>/edit', methods=['GET'])
 def edit_club(club_id):
     connection = get_db_connection()
@@ -100,7 +103,7 @@ def edit_club(club_id):
     return render_template('club/update_club.html', club=club, conferences=conferences)
 
 
-
+# Update club route
 @main.route('/club/<int:club_id>/update', methods=['POST'])
 def update_club(club_id):
     # Get form data
@@ -126,8 +129,7 @@ def update_club(club_id):
     return redirect(url_for('main.clubs'))
 
 
-
-
+# Delete club route
 @main.route('/delete_club/<int:club_id>', methods=['POST'])
 def delete_club(club_id):
     try:
@@ -136,7 +138,7 @@ def delete_club(club_id):
         if connection:
             with connection.cursor() as cursor:
                 cursor.execute("DELETE FROM Club WHERE club_id = ?", (club_id,))
-                print(f"Delete executed for club ID {club_id}")  # Confirm deletion statement execution
+                print(f"Delete executed for club ID {club_id}")  
                 connection.commit()
                 print(f"Club with ID {club_id} deleted successfully.")
             connection.close()
@@ -146,4 +148,110 @@ def delete_club(club_id):
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.clubs'))
 
+
+# # --------------------------------------------------------------------------------------------------------------------
+# # Year route details
+# # Year route
+@main.route('/years', methods=['GET'])
+def years():
+    # Connect to the database and fetch year information
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT Year_ID, Year FROM Year")  
+    years = cursor.fetchall()
+    connection.close()
+    
+    return render_template('years.html', years=years)
+
+# Add year route
+@main.route('/add_year', methods=['GET'])
+def add_year_page():
+    # Connect to the database and fetch year information
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT Year_ID, Year FROM Year") 
+    conferences = cursor.fetchall()
+    connection.close()
+    
+    return render_template('year/add_year.html')
+
+
+# Create year route
+@main.route('/create_year', methods=['POST'])
+def create_year():
+    # Get form data for 'year' only
+    year = request.form['year']
+    
+    # Connect to the database and insert the new year
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "INSERT INTO Year (Year) "
+        "VALUES (?)", 
+        (year,)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    flash('Year added successfully!')
+    return redirect(url_for('main.years'))
+
+
+# Edit year route
+@main.route('/year/<int:year_id>/edit', methods=['GET'])
+def edit_year(year_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch year details
+    cursor.execute("SELECT * FROM Year WHERE Year_ID = ?", (year_id,))
+    year = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    return render_template('year/update_year.html', year=year)
+
+
+# Update year route
+@main.route('/year/<int:year_id>/update', methods=['POST'])
+def update_year(year_id):
+    # Get form data
+    year = request.form['year']
+
+    # Connect to the database and update the year
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "UPDATE Year SET Year = ? WHERE Year_ID = ?",
+        (year, year_id)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    flash('Year updated successfully!')
+    return redirect(url_for('main.years'))
+
+
+
+# Delete year route
+@main.route('/delete_year/<int:year_id>', methods=['POST'])
+def delete_year(year_id):
+    try:
+        print(f"Attempting to delete club with ID: {year_id}")
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM Year WHERE year_id = ?", (year_id,))
+                print(f"Delete executed for Year ID {year_id}")
+                connection.commit()
+                print(f"Club with ID {year_id} deleted successfully.")
+            connection.close()
+        flash(" deleted successfully", "success")
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", "danger")
+        print(f"Error during deletion: {e}")
+    return redirect(url_for('main.years'))
 
