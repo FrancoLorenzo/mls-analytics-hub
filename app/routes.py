@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from .db_connection import get_db_connection  # Ensure this is the correct DB connection function
+from .db_connection import get_db_connection, delete_club  # Ensure this is the correct DB connection function
+
 
 main = Blueprint('main', __name__)
 
@@ -14,23 +15,32 @@ def index():
     
     return render_template('index.html', clubs=clubs)
 
-@main.route('/clubs')
+
+@main.route('/clubs', methods=['GET', 'POST'])
 def clubs():
-    # Connect to the database and fetch conference and club information
     connection = get_db_connection()
     cursor = connection.cursor()
     
-    # Fetch all conferences for the dropdown
-    cursor.execute("SELECT conference_id, conference_name FROM Conference")  # Adjust columns as needed
+    # Fetch all available conferences for the dropdown
+    cursor.execute("SELECT Conference_ID, Conference_Name FROM Conference")
     conferences = cursor.fetchall()
+
+    # Default: Show all clubs if no filter is applied
+    conference_id = request.args.get('conference_id')
     
-    # Fetch all clubs by default (no filter)
-    cursor.execute("SELECT Club_ID, Club_Name, Club_Name_Abbreviation, Club_badge FROM Club WHERE Club_Name != 'Free Agent'")
+    # If conference_id is provided, filter clubs by the selected conference
+    if conference_id and conference_id.isdigit():  # Make sure the ID is a valid number
+        cursor.execute("SELECT Club_ID, Club_Name, Club_Name_Abbreviation, Club_badge, Club_Established_Date FROM Club WHERE Conference_ID = ? AND Club_Name != 'Free Agent'", (conference_id,))
+    else:
+        cursor.execute("SELECT Club_ID, Club_Name, Club_Name_Abbreviation, Club_badge, Club_Established_Date FROM Club WHERE Club_Name != 'Free Agent'")
+    
     clubs = cursor.fetchall()
     
+    cursor.close()
     connection.close()
-    
-    return render_template('clubs.html', conferences=conferences, clubs=clubs)
+
+    return render_template('clubs.html', clubs=clubs, conferences=conferences, selected_conference=conference_id)
+
 
 
 @main.route('/add_club', methods=['GET'])
@@ -70,22 +80,6 @@ def create_club():
     return redirect(url_for('main.clubs'))
 
 
-##############################################################################################################################
-
-# app/routes.py
-
-# @main.route('/club/<int:club_id>/edit', methods=['GET'])
-# def edit_club(club_id):
-#     # Connect to the database and fetch club details
-#     connection = get_db_connection()
-#     cursor = connection.cursor()
-#     cursor.execute("SELECT * FROM Club WHERE Club_ID = ?", (club_id,))
-#     club = cursor.fetchone()
-#     cursor.close()
-#     connection.close()
-
-#     # Render the update_club.html template with club data
-#     return render_template('club/update_club.html', club=club)
 
 @main.route('/club/<int:club_id>/edit', methods=['GET'])
 def edit_club(club_id):
@@ -129,6 +123,27 @@ def update_club(club_id):
     connection.close()
     
     flash('Club updated successfully!')
+    return redirect(url_for('main.clubs'))
+
+
+
+
+@main.route('/delete_club/<int:club_id>', methods=['POST'])
+def delete_club(club_id):
+    try:
+        print(f"Attempting to delete club with ID: {club_id}")
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM Club WHERE club_id = ?", (club_id,))
+                print(f"Delete executed for club ID {club_id}")  # Confirm deletion statement execution
+                connection.commit()
+                print(f"Club with ID {club_id} deleted successfully.")
+            connection.close()
+        flash("Club deleted successfully", "success")
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", "danger")
+        print(f"Error during deletion: {e}")
     return redirect(url_for('main.clubs'))
 
 

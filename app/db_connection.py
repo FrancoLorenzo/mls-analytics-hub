@@ -21,3 +21,26 @@ def get_db_connection():
     except Exception as e:
         print(f"Error connecting to the database: {e}")
         return None
+
+
+def delete_club(club_id):
+    connection = get_db_connection()
+    if not connection:
+        print("Database connection failed.")
+        return
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM Club WHERE club_id = ?", (club_id,))
+            connection.commit()
+            print(f"Club with ID {club_id} deleted successfully.")
+    except Exception as e:
+        print(f"Error deleting club: {e}")
+    finally:
+        connection.close()
+
+
+
+
+
+
