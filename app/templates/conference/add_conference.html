@@ -1,18 +1,18 @@
 {% extends "layout.html" %}
 
-{% block title %}Add New Year{% endblock %}
+{% block title %}Add New Conferences{% endblock %}
 
 {% block content %}
-    <h1>Add a New Year</h1>
-    <p>Add the details for the new year.</p>
+    <h1>Add a New Conference</h1>
+    <p>Add the details for the new Conference.</p>
     <br>
-    <form action="{{ url_for('main.create_year') }}" method="post">
+    <form action="{{ url_for('main.create_conference') }}" method="post">
       <div class="form-group">
-          <label for="year_value">Year:</label>
-          <input type="text" id="year" name="year" class="form-control" required>
+          <label for="conference_name">Conference:</label>
+          <input type="text" id="conference" name="conference" class="form-control" required>
       </div>
       <button type="submit" class="btn btn-success">Save</button>
-      <a href="{{ url_for('main.years') }}" class="btn btn-secondary">Cancel</a>
+      <a href="{{ url_for('main.conferences') }}" class="btn btn-secondary">Cancel</a>
   </form>
 
     <!-- Flash Messages for Feedback -->

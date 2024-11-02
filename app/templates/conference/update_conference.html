@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}Update Conference{% endblock %}
+
+{% block content %}
+<h1>Update Conference</h1>
+<p>Update the details for the {{ conference['Conference'] }} conference.</p>
+<br>
+<br>
+<form action="{{ url_for('main.update_conference', conference_id=conference['Conference_ID']) }}" method="POST">
+
+    <!-- Conference Details -->
+    <div class="form-group row">
+        <label for="conference" class="col-sm-3 col-form-label">Conference:</label>
+        <div class="col-sm-9">
+            <input type="text" name="conference" id="conference" value="{{ conference['Conference_Name'] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <br><br>
+    <!-- Submit and Cancel Buttons -->
+    <div class="form-group row">
+        <div class="col-sm-9 offset-sm-3">
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <a href="{{ url_for('main.conferences') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

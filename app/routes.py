@@ -6,13 +6,7 @@ main = Blueprint('main', __name__)
 
 @main.route('/')
 def index():
-    # Fetch clubs for the index page if needed
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    cursor.execute("SELECT club_id, club_name FROM Club") 
-    clubs = cursor.fetchall()
-    connection.close()
-    
+
     return render_template('index.html', clubs=clubs)
 
 
@@ -79,7 +73,6 @@ def create_club():
     cursor.close()
     connection.close()
     
-    flash('Club added successfully!')
     return redirect(url_for('main.clubs'))
 
 
@@ -125,7 +118,6 @@ def update_club(club_id):
     cursor.close()
     connection.close()
     
-    flash('Club updated successfully!')
     return redirect(url_for('main.clubs'))
 
 
@@ -149,9 +141,9 @@ def delete_club(club_id):
     return redirect(url_for('main.clubs'))
 
 
-# # --------------------------------------------------------------------------------------------------------------------
-# # Year route details
-# # Year route
+# --------------------------------------------------------------------------------------------------------------------
+# Year route details
+# Year route
 @main.route('/years', methods=['GET'])
 def years():
     # Connect to the database and fetch year information
@@ -194,7 +186,6 @@ def create_year():
     cursor.close()
     connection.close()
     
-    flash('Year added successfully!')
     return redirect(url_for('main.years'))
 
 
@@ -231,7 +222,6 @@ def update_year(year_id):
     cursor.close()
     connection.close()
     
-    flash('Year updated successfully!')
     return redirect(url_for('main.years'))
 
 
@@ -255,3 +245,108 @@ def delete_year(year_id):
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.years'))
 
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Conference route details
+# Conference route
+@main.route('/conferences', methods=['GET'])
+def conferences():
+    # Connect to the database and fetch year information
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT Conference_ID, Conference_Name FROM Conference")  
+    conferences = cursor.fetchall()
+    connection.close()
+    
+    return render_template('conferences.html', conferences=conferences)
+
+# Add conference route
+@main.route('/add_conference', methods=['GET'])
+def add_conference_page():
+    # Connect to the database and fetch conference information
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT Conference_ID, Conference_Name FROM Conference") 
+    conferences = cursor.fetchall()
+    connection.close()
+    
+    return render_template('conference/add_conference.html', conferences=conferences)
+
+
+# Create conference route
+@main.route('/create_conference', methods=['POST'])
+def create_conference():
+    # Get form data for 'conference' only
+    conference = request.form['conference']
+    
+    # Connect to the database and insert the new conference
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "INSERT INTO Conference (Conference_Name) "  # Updated to match the correct column name
+        "VALUES (?)", 
+        (conference,)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.conferences'))
+
+
+
+# Edit conference route
+@main.route('/conference/<int:conference_id>/edit', methods=['GET'])
+def edit_conference(conference_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch year details
+    cursor.execute("SELECT * FROM Conference WHERE Conference_ID = ?", (conference_id,))
+    conference = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    return render_template('conference/update_conference.html', conference=conference)
+
+
+# Update conference route
+@main.route('/conference/<int:conference_id>/update', methods=['POST'])
+def update_conference(conference_id):
+    # Get form data
+    conference = request.form['conference']
+
+    # Connect to the database and update the conference
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "UPDATE Conference SET Conference_Name = ? WHERE Conference_ID = ?",
+        (conference, conference_id)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.conferences'))
+
+
+# Delete conference route
+@main.route('/delete_conference/<int:conference_id>', methods=['POST'])
+def delete_conference(conference_id):
+    try:
+        print(f"Attempting to delete conference with ID: {conference_id}")
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM Conference WHERE conference_id = ?", (conference_id,))
+                print(f"Delete executed for Conference ID {conference_id}")
+                connection.commit()
+                print(f"Conference with ID {conference_id} deleted successfully.")
+            connection.close()
+        flash(" deleted successfully", "success")
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", "danger")
+        print(f"Error during deletion: {e}")
+    return redirect(url_for('main.conferences'))
