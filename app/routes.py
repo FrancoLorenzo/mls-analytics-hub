@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from .db_connection import get_db_connection, delete_club  
 
 
+
+
 main = Blueprint('main', __name__)
 
 @main.route('/')
@@ -350,3 +352,138 @@ def delete_conference(conference_id):
         flash(f"An error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.conferences'))
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Player route details
+# Player route
+@main.route('/players', methods=['GET'])
+def players():
+    # Connect to the database and fetch player information
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch all available clubs for the dropdown
+    cursor.execute("SELECT Club_ID, Club_Name FROM Club")
+    clubs = cursor.fetchall()
+
+    # Default: Show all players if no filter is applied
+    club_id = request.args.get('club_id')
+
+    # If club_id is provided, filter players by the selected club
+    if club_id and club_id.isdigit():  # Make sure the ID is a valid number
+        cursor.execute("SELECT * FROM Player WHERE Club_ID = ?", (club_id,))
+    else:
+        cursor.execute("SELECT * FROM Player")
+ 
+    players = cursor.fetchall()
+
+    connection.close()
+    return render_template('players.html', players=players, clubs=clubs, selected_club=club_id)
+
+
+# Add player route
+@main.route('/add_player', methods=['GET'])
+def add_player_page():
+    # Connect to the database and fetch player information
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT Club_ID, Club_Name FROM Club") 
+    clubs = cursor.fetchall()
+    connection.close()
+    
+    return render_template('player/add_player.html', clubs=clubs)
+
+# Create player route
+@main.route('/create_player', methods=['POST'])
+def create_player():
+    # Get form data
+    club_id = request.form['club_id']
+    
+    # Connect to the database and insert the new player
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "INSERT INTO Player (Club_ID, Player_First_Name, Player_Last_Name, Birth_Date, Birthplace, Height, Weight, Position) " 
+        "VALUES (?, ? , ? , ? , ? , ? , ? , ?)", 
+        (club_id, request.form['player_first_name'], request.form['player_last_name'], request.form['birth_date'], request.form['birthplace'], request.form['height'], request.form['weight'], request.form['position'])
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.players'))
+
+
+
+# Edit Player route
+@main.route('/player/<int:player_id>/edit', methods=['GET'])
+def edit_player(player_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch player details
+    cursor.execute("SELECT * FROM Player WHERE Player_ID = ?", (player_id,))
+    player = cursor.fetchone()
+
+    # Fetch all available clubs for dropdown
+    cursor.execute("SELECT Club_ID, Club_Name FROM Club")
+    clubs = cursor.fetchall() 
+
+    cursor.close()
+    connection.close()
+
+    return render_template('player/update_player.html', player=player, clubs=clubs)
+
+
+
+
+# Update player route
+@main.route('/player/<int:player_id>/update', methods=['POST'])
+def update_player(player_id):
+    # Get form data
+    club_id = request.form['club_id']
+    player_first_name = request.form['player_first_name']
+    player_last_name = request.form['player_last_name']
+    birth_date = request.form['birth_date']
+    birthplace = request.form['birthplace']
+    height = request.form['height']
+    weight = request.form['weight']
+    position = request.form['position']
+
+    # Connect to the database and update the club
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "UPDATE Player SET Club_ID = ?, Player_First_Name = ?, Player_Last_Name = ?, Birth_date = ?, Birthplace = ?, Height = ?, Weight = ?, Position = ? WHERE Player_ID = ?",
+        (club_id, player_first_name, player_last_name, birth_date, birthplace, height, weight, position, player_id)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.players'))
+
+
+
+
+# Delete player route
+@main.route('/delete_player/<int:player_id>', methods=['POST'])
+def delete_player(player_id):
+    try:
+        print(f"Attempting to delete player with ID: {player_id}")
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM Player WHERE Player_id = ?", (player_id,))
+                print(f"Delete executed for Player ID {player_id}")
+                connection.commit()
+                print(f"Player with ID {player_id} deleted successfully.")
+            connection.close()
+        flash(" deleted successfully", "success")
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", "danger")
+        print(f"Error during deletion: {e}")
+    return redirect(url_for('main.players'))

@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block title %}Add New Player{% endblock %}
+
+{% block content %}
+    <h1>Add a New Player</h1>
+    <p>Add the details for the new player.</p>
+    <br>
+    <form action="{{ url_for('main.create_player') }}" method="post">
+          <div class="form-group">
+            <div class="form-group">
+              <label for="club_id">Club:</label>
+              <select id="club_id" name="club_id" class="form-control" required>
+                  <option value="">Select a club</option>
+                  {% for club in clubs %}
+                      <option value="{{ club[0] }}">{{ club[1] }}</option>
+                  {% endfor %}
+              </select>
+          </div>
+          <label for="player_first_name">Player First Name:</label>
+          <input type="text" id="player_first_name" name="player_first_name" class="form-control" required>
+          <label for="player_last_name">Player Last Name:</label>
+          <input type="text" id="player_last_name" name="player_last_name" class="form-control" required>
+          <label for="birth_date">Birth date:</label>
+          <input type="date" id="birth_date" name="birth_date" class="form-control" required>
+          <label for="birthplace">Birth place:</label>
+          <input type="text" id="birthplace" name="birthplace" class="form-control" required>          
+          <label for="height">Height (meters):</label>
+          <input type="text" id="height" name="height" class="form-control" required>
+          <label for="weight">Weight (kilograms):</label>
+          <input type="text" id="weight" name="weight" class="form-control" required>
+          <label for="position">Position:</label>
+          <input type="text" id="position" name="position" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-success">Save</button>
+      <a href="{{ url_for('main.players') }}" class="btn btn-secondary">Cancel</a>
+  </form>
+
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info" role="alert">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+{% endblock %}
