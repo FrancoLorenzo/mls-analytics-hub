@@ -1,0 +1,123 @@
+{% extends "layout.html" %}
+
+{% block title %}Update Player Stat{% endblock %}
+
+{% block content %}
+<h1>Update Player Stat</h1>
+<p>Update the details for {{ player_stat[2] }} {{ player_stat[3] }} in {{ player_stat[5] }}.</p>
+<br>
+
+<form action="{{ url_for('main.update_player_stat', player_stat_id=player_stat[0]) }}" method="POST">
+
+    <!-- Player Dropdown -->
+    <div class="form-group row">
+        <label for="player_id" class="col-sm-3 col-form-label">Player:</label>
+        <div class="col-sm-9">
+            <select id="player_id" name="player_id" class="form-control" required>
+                {% for player in players %}
+                    <option value="{{ player[0] }}" {% if player[0] == player_stat[1] %}selected{% endif %}>{{ player[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Year Dropdown -->
+    <div class="form-group row">
+        <label for="year_id" class="col-sm-3 col-form-label">Year:</label>
+        <div class="col-sm-9">
+            <select id="year_id" name="year_id" class="form-control" required>
+                {% for year in years %}
+                    <option value="{{ year[0] }}" {% if year[0] == player_stat[4] %}selected{% endif %}>{{ year[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Stat Fields -->
+    <div class="form-group row">
+        <label for="goals" class="col-sm-3 col-form-label">Goals:</label>
+        <div class="col-sm-9">
+            <input type="number" name="goals" id="goals" value="{{ player_stat[6] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="passes" class="col-sm-3 col-form-label">Passes:</label>
+        <div class="col-sm-9">
+            <input type="number" name="passes" id="passes" value="{{ player_stat[7] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="passes_complete" class="col-sm-3 col-form-label">Passes Complete:</label>
+        <div class="col-sm-9">
+            <input type="number" name="passes_complete" id="passes_complete" value="{{ player_stat[8] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="assists" class="col-sm-3 col-form-label">Assists:</label>
+        <div class="col-sm-9">
+            <input type="number" name="assists" id="assists" value="{{ player_stat[9] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="free_kicks" class="col-sm-3 col-form-label">Free Kicks:</label>
+        <div class="col-sm-9">
+            <input type="number" name="free_kicks" id="free_kicks" value="{{ player_stat[10] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="corner_kicks" class="col-sm-3 col-form-label">Corner Kicks:</label>
+        <div class="col-sm-9">
+            <input type="number" name="corner_kicks" id="corner_kicks" value="{{ player_stat[11] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="fouls" class="col-sm-3 col-form-label">Fouls:</label>
+        <div class="col-sm-9">
+            <input type="number" name="fouls" id="fouls" value="{{ player_stat[12] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="fouls_suffered" class="col-sm-3 col-form-label">Fouls Suffered:</label>
+        <div class="col-sm-9">
+            <input type="number" name="fouls_suffered" id="fouls_suffered" value="{{ player_stat[13] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="offside" class="col-sm-3 col-form-label">Offside:</label>
+        <div class="col-sm-9">
+            <input type="number" name="offside" id="offside" value="{{ player_stat[14] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="yellow_cards" class="col-sm-3 col-form-label">Yellow Cards:</label>
+        <div class="col-sm-9">
+            <input type="number" name="yellow_cards" id="yellow_cards" value="{{ player_stat[15] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="red_cards" class="col-sm-3 col-form-label">Red Cards:</label>
+        <div class="col-sm-9">
+            <input type="number" name="red_cards" id="red_cards" value="{{ player_stat[16] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <br><br>
+    <!-- Submit and Cancel Buttons -->
+    <div class="form-group row">
+        <div class="col-sm-9 offset-sm-3">
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <a href="{{ url_for('main.players_stats') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

@@ -10,8 +10,8 @@
     <table class="table table-striped mt-3">
         <thead>
             <tr>
-                <th>Player ID</th>
-                <th>Year ID</th>
+                <th>Player Name</th>
+                <th>Year</th>
                 <th>Goals</th>
                 <th>Passes</th>
                 <th>Passes Complete</th>
@@ -31,21 +31,27 @@
         <tbody>
             {% for stat in players_stats %}
                 <tr>
-                    <td>{{ stat[0] }}</td> <!-- Player_ID -->
-                    <td>{{ stat[1] }}</td> <!-- Year_ID -->
-                    <td>{{ stat[2] }}</td> <!-- Goals -->
-                    <td>{{ stat[3] }}</td> <!-- Passes -->
-                    <td>{{ stat[4] }}</td> <!-- Passes_complete -->
-                    <td>{{ stat[5] }}</td> <!-- Assists -->
-                    <td>{{ stat[6] }}</td> <!-- Free_kicks -->
-                    <td>{{ stat[7] }}</td> <!-- Corner_kicks -->
-                    <td>{{ stat[8] }}</td> <!-- Fouls -->
-                    <td>{{ stat[9] }}</td> <!-- Fouls_suffered -->
-                    <td>{{ stat[10] }}</td> <!-- Offside -->
-                    <td>{{ stat[11] }}</td> <!-- Yellow_cards -->
-                    <td>{{ stat[12] }}</td> <!-- Red_cards -->
+                    <td>{{ stat[2] }}</td> <!-- Player_Name -->
+                    <td>{{ stat[3] }}</td> <!-- Year -->
+                    <td>{{ stat[4] }}</td> <!-- Goals -->
+                    <td>{{ stat[5] }}</td> <!-- Passes -->
+                    <td>{{ stat[6] }}</td> <!-- Passes_complete -->
+                    <td>{{ stat[7] }}</td> <!-- Assists -->
+                    <td>{{ stat[8] }}</td> <!-- Free_kicks -->
+                    <td>{{ stat[9] }}</td> <!-- Corner_kicks -->
+                    <td>{{ stat[10] }}</td> <!-- Fouls -->
+                    <td>{{ stat[11] }}</td> <!-- Fouls_suffered -->
+                    <td>{{ stat[12] }}</td> <!-- Offside -->
+                    <td>{{ stat[13] }}</td> <!-- Yellow_cards -->
+                    <td>{{ stat[14] }}</td> <!-- Red_cards -->
                     <td>
-
+                        <!-- Corrected Edit Link -->
+                        <a href="{{ url_for('main.edit_player_stat', player_stat_id=stat[0]) }}" class="btn btn-primary mt-2">Edit</a>
+                        
+                        <!-- Corrected Delete Form -->
+                        <form action="{{ url_for('main.delete_player_stat', player_stat_id=stat[0]) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger mt-2" onclick="return confirm('Are you sure you want to delete this player stat?');">Delete</button>
+                        </form>
                     </td>
                 </tr>
             {% endfor %}

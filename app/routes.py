@@ -495,15 +495,32 @@ def delete_player(player_id):
 # Player stats route
 @main.route('/players_stats', methods=['GET'])
 def players_stats():
-    # Connect to the database and fetch player stats information
+    # Connect to the database and fetch player stats with player first names and year numbers
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute("""
         SELECT 
-            Player_ID, Year_ID, Goals, Passes, Passes_complete, Assists, 
-            Free_kicks, Corner_kicks, Fouls, Fouls_suffered, Offside, 
-            Yellow_cards, Red_cards
-        FROM player_stats
+            ps.Player_stats_ID, 
+            ps.Player_ID, 
+            CONCAT(p.Player_First_Name, ' ', p.Player_Last_Name) AS Player_Name, 
+            y.Year, 
+            ps.Goals, 
+            ps.Passes, 
+            ps.Passes_complete, 
+            ps.Assists, 
+            ps.Free_kicks, 
+            ps.Corner_kicks, 
+            ps.Fouls, 
+            ps.Fouls_suffered, 
+            ps.Offside, 
+            ps.Yellow_cards, 
+            ps.Red_cards
+        FROM 
+            Player_Stats ps
+        JOIN 
+            Player p ON ps.Player_ID = p.Player_ID
+        JOIN 
+            Year y ON ps.Year_ID = y.Year_ID
     """)
     players_stats = cursor.fetchall()
     connection.close()
@@ -513,24 +530,23 @@ def players_stats():
 
 
 # Add player stats route
-@main.route('/add_players_stats', methods=['GET'])
+@main.route('/add_player_stat', methods=['GET'])
 def add_player_stats():
-    # Connect to the database and fetch necessary information for dropdowns (e.g., players and years)
+    # Connect to the database and fetch necessary information for dropdowns (e.g., player names and years)
     connection = get_db_connection()
     cursor = connection.cursor()
     
-    # Fetch player IDs and names if needed for dropdown
-    cursor.execute("SELECT * FROM Player")
+    # Fetch player IDs and first names for dropdown
+    cursor.execute("SELECT Player_ID, CONCAT(Player_First_Name, ' ', Player_Last_Name) AS Player_Name FROM Player")
     players = cursor.fetchall()
     
-    # Fetch year IDs if needed for dropdown
+    # Fetch year IDs and actual year values for dropdown
     cursor.execute("SELECT Year_ID, Year FROM Year")
     years = cursor.fetchall()
     
     connection.close()
     
     return render_template('player/add_player_stats.html', players=players, years=years)
-
 
 
 # Create player stat route
@@ -561,6 +577,94 @@ def create_player_stat():
             Yellow_cards, Red_cards
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?) 
     """, (player_id, year_id, goals, passes, passes_complete, assists, free_kicks, corner_kicks, fouls, fouls_suffered, offside, yellow_cards, red_cards))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.players_stats'))
+
+
+# Edit player stat route
+@main.route('/player_stat/<int:player_stat_id>/edit', methods=['GET'])
+def edit_player_stat(player_stat_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch player stat details including Year_ID and Year for dropdown selection
+    cursor.execute("""
+        SELECT 
+            ps.Player_stats_ID, ps.Player_ID, p.Player_First_Name, p.Player_Last_Name, 
+            ps.Year_ID, y.Year, ps.Goals, ps.Passes, ps.Passes_complete, ps.Assists, 
+            ps.Free_kicks, ps.Corner_kicks, ps.Fouls, ps.Fouls_suffered, ps.Offside, 
+            ps.Yellow_cards, ps.Red_cards 
+        FROM Player_Stats ps
+        JOIN Player p ON ps.Player_ID = p.Player_ID
+        JOIN Year y ON ps.Year_ID = y.Year_ID
+        WHERE ps.Player_stats_ID = ?
+    """, (player_stat_id,))
+    player_stat = cursor.fetchone()
+
+    # Fetch available players and years for dropdowns
+    cursor.execute("SELECT Player_ID, CONCAT(Player_First_Name, ' ', Player_Last_Name) AS Player_Name FROM Player")
+    players = cursor.fetchall()
+    
+    cursor.execute("SELECT Year_ID, Year FROM Year")
+    years = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return render_template('player/update_player_stats.html', player_stat=player_stat, players=players, years=years)
+
+
+
+
+# Update player stat route
+@main.route('/player_stat/<int:player_stat_id>/update', methods=['POST'])
+def update_player_stat(player_stat_id):
+    # Get form data
+    player_id = request.form['player_id']
+    year_id = request.form['year_id']
+    goals = request.form['goals']
+    passes = request.form['passes']
+    passes_complete = request.form['passes_complete']
+    assists = request.form['assists']
+    free_kicks = request.form['free_kicks']
+    corner_kicks = request.form['corner_kicks']
+    fouls = request.form['fouls']
+    fouls_suffered = request.form['fouls_suffered']
+    offside = request.form['offside']
+    yellow_cards = request.form['yellow_cards']
+    red_cards = request.form['red_cards']
+
+    # Connect to the database and update the player stat
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        UPDATE Player_Stats 
+        SET Player_ID = ?, Year_ID = ?, Goals = ?, Passes = ?, Passes_complete = ?, 
+            Assists = ?, Free_kicks = ?, Corner_kicks = ?, Fouls = ?, Fouls_suffered = ?, 
+            Offside = ?, Yellow_cards = ?, Red_cards = ?
+        WHERE Player_stats_ID = ?
+    """, (player_id, year_id, goals, passes, passes_complete, assists, 
+          free_kicks, corner_kicks, fouls, fouls_suffered, offside, yellow_cards, 
+          red_cards, player_stat_id))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.players_stats'))
+
+
+
+
+# Delete player stat route
+@main.route('/player_stat/<int:player_stat_id>/delete', methods=['POST'])
+def delete_player_stat(player_stat_id):
+    # Connect to the database and delete the player stat
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM Player_Stats WHERE Player_stats_ID = ?", (player_stat_id,))
     connection.commit()
     cursor.close()
     connection.close()
