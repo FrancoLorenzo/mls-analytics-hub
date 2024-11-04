@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}Update Competition{% endblock %}
+
+{% block content %}
+<h1>Update Competition</h1>
+<p>Update the details for the {{ competition['Competition_Name'] }} competition.</p>
+<br>
+<br>
+<form action="{{ url_for('main.update_competition', competition_id=competition['Competition_ID']) }}" method="POST">
+
+    <!-- Competition Name -->
+    <div class="form-group row">
+        <label for="competition_name" class="col-sm-3 col-form-label">Competition Name:</label>
+        <div class="col-sm-9">
+            <input type="text" name="competition_name" id="competition_name" value="{{ competition['Competition_Name'] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <br><br>
+    <!-- Submit and Cancel Buttons -->
+    <div class="form-group row">
+        <div class="col-sm-9 offset-sm-3">
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <a href="{{ url_for('main.competitions') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

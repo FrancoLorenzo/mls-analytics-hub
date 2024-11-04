@@ -823,3 +823,162 @@ def delete_club_stats(club_stats_id):
         flash(f"An error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.clubs_stats'))
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Competition route details
+# Competition route
+@main.route('/competitions', methods=['GET'])
+def competitions():
+    # Connect to the database and fetch competition information
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")
+    competitions = cursor.fetchall()
+    connection.close()
+    
+    return render_template('competitions.html', competitions=competitions)
+
+
+
+# Add competition route
+@main.route('/add_competition', methods=['GET'])
+def add_competition_page():
+    # Render the form for adding a competition with Competition_ID and Competition_Name fields
+    return render_template('competitions/add_competition.html')
+
+
+
+# Create competition route
+@main.route('/create_competition', methods=['POST'])
+def create_competition():
+    # Get form data for competition ID and name
+    competition_name = request.form['competition_name']
+    
+    # Connect to the database and insert the new competition
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "INSERT INTO Competition (Competition_Name) VALUES (?)",
+        (competition_name)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.competitions'))
+
+
+
+# Edit competition route
+@main.route('/competition/<int:competition_id>/edit', methods=['GET'])
+def edit_competition(competition_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch competition details
+    cursor.execute("SELECT * FROM Competition WHERE Competition_ID = ?", (competition_id,))
+    competition = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    return render_template('competitions/update_competition.html', competition=competition)
+
+
+
+# Update competition route
+@main.route('/competition/<int:competition_id>/update', methods=['POST'])
+def update_competition(competition_id):
+    # Get form data
+    competition_name = request.form['competition_name']
+
+    # Connect to the database and update the competition
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "UPDATE Competition SET Competition_Name = ? WHERE Competition_ID = ?",
+        (competition_name, competition_id)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.competitions'))
+
+
+
+# Delete competition route
+@main.route('/delete_competition/<int:competition_id>', methods=['POST'])
+def delete_competition(competition_id):
+    try:
+        print(f"Attempting to delete competition with ID: {competition_id}")
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM Competition WHERE Competition_ID = ?", (competition_id,))
+                print(f"Delete executed for Competition ID {competition_id}")
+                connection.commit()
+                print(f"Competition with ID {competition_id} deleted successfully.")
+            connection.close()
+        flash("Competition deleted successfully", "success")
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", "danger")
+        print(f"Error during deletion: {e}")
+    return redirect(url_for('main.competitions'))
+
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Standings route details
+# Standings route
+@main.route('/standings', methods=['GET'])
+def standings():
+    # Connect to the database and fetch standings information
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT 
+            Standing_ID, 
+            Competition_ID, 
+            Club_stats_ID, 
+            Year_ID, 
+            Total_points 
+        FROM Standings
+    """)
+    standings = cursor.fetchall()
+    connection.close()
+    
+    return render_template('standings.html', standings=standings)
+
+
+# Add standings route
+@main.route('/add_standings', methods=['GET'])
+def add_standings_page():
+    # Connect to the database to fetch necessary data for dropdowns
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch available competitions, clubs stats, and years
+    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")  # Assuming Competition table has Competition_Name
+    competitions = cursor.fetchall()
+
+    cursor.execute("SELECT Club_Stats_ID FROM Club_stats")  # Assuming we only need the ID here
+    club_stats = cursor.fetchall()
+    
+    cursor.execute("SELECT Year_ID, Year FROM Year")
+    years = cursor.fetchall()
+    
+    connection.close()
+    
+    return render_template('standings/add_standings.html', competitions=competitions, club_stats=club_stats, years=years)
+
+
+
+

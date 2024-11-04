@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}Add New Competition{% endblock %}
+
+{% block content %}
+    <h1>Add New Competition</h1>
+    <p>Enter the details for the new competition.</p>
+    <br>
+    <form action="{{ url_for('main.create_competition') }}" method="post">
+        <div class="form-group">
+            <label for="competition_name">Competition Name:</label>
+            <input type="text" id="competition_name" name="competition_name" class="form-control" required>
+        </div>
+        
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{{ url_for('main.competitions') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-info" role="alert">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+{% endblock %}

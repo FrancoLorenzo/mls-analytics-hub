@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block title %}Standings - MLS Analytics Hub{% endblock %}
+
+{% block content %}
+    <h1>MLS Standings</h1>
+    <p>Here is the list of MLS standings.</p>
+
+    <!-- Standings Table -->
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Standing ID</th>
+                <th>Competition ID</th>
+                <th>Club Stats ID</th>
+                <th>Year ID</th>
+                <th>Total Points</th>
+                <th><a href="{{ url_for('main.add_standings_page') }}" class="btn btn-primary mt-2" style="margin-left: 15px;">Add Standing</a></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for standing in standings %}
+                <tr>
+                    <td>{{ standing.Standing_ID }}</td>
+                    <td>{{ standing.Competition_ID }}</td>
+                    <td>{{ standing.Club_stats_ID }}</td>
+                    <td>{{ standing.Year_ID }}</td>
+                    <td>{{ standing.Total_points }}</td>
+                    <td>
+
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
