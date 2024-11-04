@@ -5,8 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MLS Analytics Hub{% endblock %}</title>
     <!-- Link to Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        /* Override dropdown menu text color and add hover effect */
+        .dropdown-menu .dropdown-item {
+            color: #000 !important; /* Ensures text is black */
+            transition: background-color 0.2s ease-in-out; /* Smooth transition */
+        }
+        .dropdown-menu .dropdown-item:hover {
+            background-color: #007bff !important; /* Blue background on hover */
+            color: #fff !important; /* White text on hover */
+        }
+    </style>
 </head>
 <body>
 
@@ -23,7 +34,15 @@
                 <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.index') }}">Home</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.clubs') }}">Clubs</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="#">Standings</a></li>
-                <li class="nav-item"><a class="nav-link text-white" href="#">Stats</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link text-white dropdown-toggle" href="#" id="statsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Stats
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="statsDropdown">
+                        <a class="dropdown-item" href="{{ url_for('main.players_stats') }}">Player Stats</a>
+                        <a class="dropdown-item" href="#">Club Stats</a>
+                    </div>
+                </li>
                 <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.players') }}">Players</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.conferences') }}">Conferences</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.years') }}">Years</a></li>
@@ -52,8 +71,8 @@
 </footer>
 
 <!-- Bootstrap JS and dependencies -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

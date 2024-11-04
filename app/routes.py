@@ -487,3 +487,85 @@ def delete_player(player_id):
         flash(f"An error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.players'))
+
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Player stats route details
+# Player stats route
+@main.route('/players_stats', methods=['GET'])
+def players_stats():
+    # Connect to the database and fetch player stats information
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT 
+            Player_ID, Year_ID, Goals, Passes, Passes_complete, Assists, 
+            Free_kicks, Corner_kicks, Fouls, Fouls_suffered, Offside, 
+            Yellow_cards, Red_cards
+        FROM player_stats
+    """)
+    players_stats = cursor.fetchall()
+    connection.close()
+    
+    return render_template('players_stats.html', players_stats=players_stats)
+
+
+
+# Add player stats route
+@main.route('/add_players_stats', methods=['GET'])
+def add_player_stats():
+    # Connect to the database and fetch necessary information for dropdowns (e.g., players and years)
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    
+    # Fetch player IDs and names if needed for dropdown
+    cursor.execute("SELECT * FROM Player")
+    players = cursor.fetchall()
+    
+    # Fetch year IDs if needed for dropdown
+    cursor.execute("SELECT Year_ID, Year FROM Year")
+    years = cursor.fetchall()
+    
+    connection.close()
+    
+    return render_template('player/add_player_stats.html', players=players, years=years)
+
+
+
+# Create player stat route
+@main.route('/create_player_stat', methods=['POST'])
+def create_player_stat():
+    # Get form data for player stats
+    player_id = request.form['player_id']
+    year_id = request.form['year_id']
+    goals = request.form['goals']
+    passes = request.form['passes']
+    passes_complete = request.form['passes_complete']
+    assists = request.form['assists']
+    free_kicks = request.form['free_kicks']
+    corner_kicks = request.form['corner_kicks']
+    fouls = request.form['fouls']
+    fouls_suffered = request.form['fouls_suffered']
+    offside = request.form['offside']
+    yellow_cards = request.form['yellow_cards']
+    red_cards = request.form['red_cards']
+
+    # Connect to the database and insert the new player stat
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        INSERT INTO player_stats (
+            Player_ID, Year_ID, Goals, Passes, Passes_complete, Assists, 
+            Free_kicks, Corner_kicks, Fouls, Fouls_suffered, Offside, 
+            Yellow_cards, Red_cards
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?) 
+    """, (player_id, year_id, goals, passes, passes_complete, assists, free_kicks, corner_kicks, fouls, fouls_suffered, offside, yellow_cards, red_cards))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.players_stats'))
+
+
+

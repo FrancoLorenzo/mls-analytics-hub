@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block title %}Player Stats - MLS Analytics Hub{% endblock %}
+
+{% block content %}
+    <h1>Player Statistics</h1>
+    <p>Here is the list of player statistics for the MLS.</p>
+
+    <!-- Player Stats Table -->
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Player ID</th>
+                <th>Year ID</th>
+                <th>Goals</th>
+                <th>Passes</th>
+                <th>Passes Complete</th>
+                <th>Assists</th>
+                <th>Free Kicks</th>
+                <th>Corner Kicks</th>
+                <th>Fouls</th>
+                <th>Fouls Suffered</th>
+                <th>Offside</th>
+                <th>Yellow Cards</th>
+                <th>Red Cards</th>
+                <th>
+                    <a href="{{ url_for('main.add_player_stats') }}" class="btn btn-primary mt-2" style="margin-left: 15px;">Add Player Stat</a>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in players_stats %}
+                <tr>
+                    <td>{{ stat[0] }}</td> <!-- Player_ID -->
+                    <td>{{ stat[1] }}</td> <!-- Year_ID -->
+                    <td>{{ stat[2] }}</td> <!-- Goals -->
+                    <td>{{ stat[3] }}</td> <!-- Passes -->
+                    <td>{{ stat[4] }}</td> <!-- Passes_complete -->
+                    <td>{{ stat[5] }}</td> <!-- Assists -->
+                    <td>{{ stat[6] }}</td> <!-- Free_kicks -->
+                    <td>{{ stat[7] }}</td> <!-- Corner_kicks -->
+                    <td>{{ stat[8] }}</td> <!-- Fouls -->
+                    <td>{{ stat[9] }}</td> <!-- Fouls_suffered -->
+                    <td>{{ stat[10] }}</td> <!-- Offside -->
+                    <td>{{ stat[11] }}</td> <!-- Yellow_cards -->
+                    <td>{{ stat[12] }}</td> <!-- Red_cards -->
+                    <td>
+
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+
+{% block title %}Add New Player Stat{% endblock %}
+
+{% block content %}
+    <h1>Add a New Player Stat</h1>
+    <p>Enter the details for the new player stat.</p>
+    <br>
+    <form action="{{ url_for('main.create_player_stat') }}" method="post">
+      <div class="form-group">
+          <label for="player_id">Player:</label>
+          <select id="player_id" name="player_id" class="form-control" required>
+              {% for player in players %}
+                  <option value="{{ player[0] }}">{{ player[1] }}</option>
+              {% endfor %}
+          </select>
+      </div>
+      <div class="form-group">
+          <label for="year_id">Year:</label>
+          <select id="year_id" name="year_id" class="form-control" required>
+              {% for year in years %}
+                  <option value="{{ year[0] }}">{{ year[1] }}</option>
+              {% endfor %}
+          </select>
+      </div>
+      <div class="form-group">
+          <label for="goals">Goals:</label>
+          <input type="number" id="goals" name="goals" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="passes">Passes:</label>
+          <input type="number" id="passes" name="passes" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="passes_complete">Passes Complete:</label>
+          <input type="number" id="passes_complete" name="passes_complete" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="assists">Assists:</label>
+          <input type="number" id="assists" name="assists" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="free_kicks">Free Kicks:</label>
+          <input type="number" id="free_kicks" name="free_kicks" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="corner_kicks">Corner Kicks:</label>
+          <input type="number" id="corner_kicks" name="corner_kicks" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="fouls">Fouls:</label>
+          <input type="number" id="fouls" name="fouls" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="fouls_suffered">Fouls Suffered:</label>
+          <input type="number" id="fouls_suffered" name="fouls_suffered" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="offside">Offside:</label>
+          <input type="number" id="offside" name="offside" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="yellow_cards">Yellow Cards:</label>
+          <input type="number" id="yellow_cards" name="yellow_cards" class="form-control" required>
+      </div>
+      <div class="form-group">
+          <label for="red_cards">Red Cards:</label>
+          <input type="number" id="red_cards" name="red_cards" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-success">Save</button>
+      <a href="{{ url_for('main.players_stats') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info" role="alert">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+{% endblock %}
