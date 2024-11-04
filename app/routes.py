@@ -673,3 +673,153 @@ def delete_player_stat(player_stat_id):
 
 
 
+# --------------------------------------------------------------------------------------------------------------------
+# Club stats route details
+# Clubs_stats route
+@main.route('/clubs_stats', methods=['GET'])
+def clubs_stats():
+    # Connect to the database and fetch club stats information with club names and year numbers
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT 
+            cs.Club_Stats_ID, 
+            c.Club_Name, 
+            y.Year, 
+            cs.Total_Wins, 
+            cs.Total_Losses, 
+            cs.Total_Draws 
+        FROM Club_stats cs
+        JOIN Club c ON cs.Club_ID = c.Club_ID
+        JOIN Year y ON cs.Year_ID = y.Year_ID
+    """)
+    clubs_stats = cursor.fetchall()
+    connection.close()
+    
+    return render_template('clubs_stats.html', clubs_stats=clubs_stats)
+
+
+
+# Add club stats route
+@main.route('/add_club_stats', methods=['GET'])
+def add_club_stats_page():
+    # Connect to the database if additional data is needed, e.g., club or year options
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT Club_ID, Club_Name FROM Club")  # Fetch available clubs
+    clubs = cursor.fetchall()
+    
+    cursor.execute("SELECT Year_ID, Year FROM Year")  # Fetch available years
+    years = cursor.fetchall()
+    connection.close()
+    
+    return render_template('club/add_club_stats.html', clubs=clubs, years=years)
+
+
+# Create club stats route
+@main.route('/create_club_stats', methods=['POST'])
+def create_club_stats():
+    # Get form data for club stats
+    club_id = request.form['club_id']
+    year_id = request.form['year_id']
+    total_wins = request.form['total_wins']
+    total_losses = request.form['total_losses']
+    total_draws = request.form['total_draws']
+    
+    # Connect to the database and insert the new club stats
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "INSERT INTO Club_stats (Club_ID, Year_ID, Total_Wins, Total_Losses, Total_Draws) "
+        "VALUES (?, ?, ?, ?, ?)", 
+        (club_id, year_id, total_wins, total_losses, total_draws)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.clubs_stats'))
+
+
+
+# Edit club stats route
+@main.route('/club_stats/<int:club_stats_id>/edit', methods=['GET'])
+def edit_club_stats(club_stats_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch club stats details
+    cursor.execute("""
+        SELECT 
+            cs.Club_Stats_ID, 
+            cs.Club_ID, 
+            cs.Year_ID, 
+            cs.Total_Wins, 
+            cs.Total_Losses, 
+            cs.Total_Draws 
+        FROM Club_stats cs
+        WHERE cs.Club_Stats_ID = ?
+    """, (club_stats_id,))
+    club_stats = cursor.fetchone()
+
+    # Fetch available clubs and years for dropdowns
+    cursor.execute("SELECT Club_ID, Club_Name FROM Club")
+    clubs = cursor.fetchall()
+    
+    cursor.execute("SELECT Year_ID, Year FROM Year")
+    years = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return render_template('club/update_club_stats.html', club_stats=club_stats, clubs=clubs, years=years)
+
+
+
+# Update club stats route
+@main.route('/club_stats/<int:club_stats_id>/update', methods=['POST'])
+def update_club_stats(club_stats_id):
+    # Get form data
+    club_id = request.form['club_id']
+    year_id = request.form['year_id']
+    total_wins = request.form['total_wins']
+    total_losses = request.form['total_losses']
+    total_draws = request.form['total_draws']
+
+    # Connect to the database and update the club stats
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        UPDATE Club_stats 
+        SET Club_ID = ?, Year_ID = ?, Total_Wins = ?, Total_Losses = ?, Total_Draws = ?
+        WHERE Club_Stats_ID = ?
+        """, 
+        (club_id, year_id, total_wins, total_losses, total_draws, club_stats_id)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return redirect(url_for('main.clubs_stats'))
+
+
+
+# Delete club stats route
+@main.route('/delete_club_stats/<int:club_stats_id>', methods=['POST'])
+def delete_club_stats(club_stats_id):
+    try:
+        print(f"Attempting to delete club stats with ID: {club_stats_id}")
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM Club_stats WHERE Club_Stats_ID = ?", (club_stats_id,))
+                print(f"Delete executed for Club Stats ID {club_stats_id}")
+                connection.commit()
+                print(f"Club stats with ID {club_stats_id} deleted successfully.")
+            connection.close()
+        flash("Club stats deleted successfully", "success")
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", "danger")
+        print(f"Error during deletion: {e}")
+    return redirect(url_for('main.clubs_stats'))

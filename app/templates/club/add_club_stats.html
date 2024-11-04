@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block title %}Add New Club Stats{% endblock %}
+
+{% block content %}
+    <h1>Add New Club Stats</h1>
+    <p>Enter the details for the club's statistics.</p>
+    <br>
+    <form action="{{ url_for('main.create_club_stats') }}" method="post">
+        <div class="form-group">
+            <label for="club_id">Club:</label>
+            <select id="club_id" name="club_id" class="form-control" required>
+                <option value="">Select Club</option>
+                {% for club in clubs %}
+                    <option value="{{ club[0] }}">{{ club[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="year_id">Year:</label>
+            <select id="year_id" name="year_id" class="form-control" required>
+                <option value="">Select Year</option>
+                {% for year in years %}
+                    <option value="{{ year[0] }}">{{ year[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="total_wins">Total Wins:</label>
+            <input type="number" id="total_wins" name="total_wins" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="total_losses">Total Losses:</label>
+            <input type="number" id="total_losses" name="total_losses" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="total_draws">Total Draws:</label>
+            <input type="number" id="total_draws" name="total_draws" class="form-control" required>
+        </div>
+
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{{ url_for('main.clubs_stats') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-info" role="alert">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+{% endblock %}

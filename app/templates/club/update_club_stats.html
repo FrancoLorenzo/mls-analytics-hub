@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+
+{% block title %}Update Club Stats{% endblock %}
+
+{% block content %}
+<h1>Update Club Stats</h1>
+<p>Update the details for the selected club stats entry.</p>
+<br>
+<br>
+<form action="{{ url_for('main.update_club_stats', club_stats_id=club_stats['Club_Stats_ID']) }}" method="POST">
+
+    <!-- Club Selection -->
+    <div class="form-group row">
+        <label for="club_id" class="col-sm-3 col-form-label">Club:</label>
+        <div class="col-sm-9">
+            <select name="club_id" id="club_id" class="form-control" required>
+                {% for club in clubs %}
+                    <option value="{{ club[0] }}" {% if club[0] == club_stats['Club_ID'] %}selected{% endif %}>{{ club[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Year Selection -->
+    <div class="form-group row">
+        <label for="year_id" class="col-sm-3 col-form-label">Year:</label>
+        <div class="col-sm-9">
+            <select name="year_id" id="year_id" class="form-control" required>
+                {% for year in years %}
+                    <option value="{{ year[0] }}" {% if year[0] == club_stats['Year_ID'] %}selected{% endif %}>{{ year[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Total Wins -->
+    <div class="form-group row">
+        <label for="total_wins" class="col-sm-3 col-form-label">Total Wins:</label>
+        <div class="col-sm-9">
+            <input type="number" name="total_wins" id="total_wins" value="{{ club_stats['Total_Wins'] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <!-- Total Losses -->
+    <div class="form-group row">
+        <label for="total_losses" class="col-sm-3 col-form-label">Total Losses:</label>
+        <div class="col-sm-9">
+            <input type="number" name="total_losses" id="total_losses" value="{{ club_stats['Total_Losses'] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <!-- Total Draws -->
+    <div class="form-group row">
+        <label for="total_draws" class="col-sm-3 col-form-label">Total Draws:</label>
+        <div class="col-sm-9">
+            <input type="number" name="total_draws" id="total_draws" value="{{ club_stats['Total_Draws'] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <br><br>
+    <!-- Submit and Cancel Buttons -->
+    <div class="form-group row">
+        <div class="col-sm-9 offset-sm-3">
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <a href="{{ url_for('main.clubs_stats') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+{% endblock %}
