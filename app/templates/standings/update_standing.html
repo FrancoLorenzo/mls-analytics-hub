@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+
+{% block title %}Update Standing{% endblock %}
+
+{% block content %}
+<h1>Update Standing</h1>
+<p>Update the details for the selected standing entry.</p>
+<br>
+<br>
+<form action="{{ url_for('main.update_standing', standing_id=standing['Standing_ID']) }}" method="POST">
+
+    <!-- Competition Selection -->
+    <div class="form-group row">
+        <label for="competition_id" class="col-sm-3 col-form-label">Competition:</label>
+        <div class="col-sm-9">
+            <select name="competition_id" id="competition_id" class="form-control" required>
+                {% for competition in competitions %}
+                    <option value="{{ competition[0] }}" {% if competition[0] == standing['Competition_ID'] %}selected{% endif %}>
+                        {{ competition[1] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Club Selection -->
+    <div class="form-group row">
+        <label for="club_stats_id" class="col-sm-3 col-form-label">Club:</label>
+        <div class="col-sm-9">
+            <select name="club_stats_id" id="club_stats_id" class="form-control" required>
+                {% for club in club_stats %}
+                    <option value="{{ club[0] }}" {% if club[0] == standing['Club_stats_ID'] %}selected{% endif %}>
+                        {{ club[1] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Year Selection -->
+    <div class="form-group row">
+        <label for="year_id" class="col-sm-3 col-form-label">Year:</label>
+        <div class="col-sm-9">
+            <select name="year_id" id="year_id" class="form-control" required>
+                {% for year in years %}
+                    <option value="{{ year[0] }}" {% if year[0] == standing['Year_ID'] %}selected{% endif %}>
+                        {{ year[1] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Total Points -->
+    <div class="form-group row">
+        <label for="total_points" class="col-sm-3 col-form-label">Total Points:</label>
+        <div class="col-sm-9">
+            <input type="number" name="total_points" id="total_points" value="{{ standing['Total_points'] }}" class="form-control" required>
+        </div>
+    </div>
+
+    <br><br>
+    <!-- Submit and Cancel Buttons -->
+    <div class="form-group row">
+        <div class="col-sm-9 offset-sm-3">
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <a href="{{ url_for('main.standings') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</form>
+{% endblock %}

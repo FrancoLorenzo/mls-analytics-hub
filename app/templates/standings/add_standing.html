@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+
+{% block title %}Add New Standing{% endblock %}
+
+{% block content %}
+    <h1>Add a New Standing</h1>
+    <p>Enter the details for the new standing entry.</p>
+    <br>
+    <form action="{{ url_for('main.create_standing') }}" method="post">
+        <!-- Competition Selection -->
+        <div class="form-group">
+            <label for="competition_id">Competition:</label>
+            <select id="competition_id" name="competition_id" class="form-control" required>
+                <option value="">Select Competition</option>
+                {% for competition in competitions %}
+                    <option value="{{ competition[0] }}">{{ competition[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Club Selection -->
+        <div class="form-group">
+            <label for="club_stats_id">Club:</label>
+            <select id="club_stats_id" name="club_stats_id" class="form-control" required>
+                <option value="">Select Club</option>
+                {% for club in club_stats %}
+                    <option value="{{ club[0] }}">{{ club[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Year Selection -->
+        <div class="form-group">
+            <label for="year_id">Year:</label>
+            <select id="year_id" name="year_id" class="form-control" required>
+                <option value="">Select Year</option>
+                {% for year in years %}
+                    <option value="{{ year[0] }}">{{ year[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Total Points -->
+        <div class="form-group">
+            <label for="total_points">Total Points:</label>
+            <input type="number" id="total_points" name="total_points" class="form-control" required>
+        </div>
+
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{{ url_for('main.standings') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-info" role="alert">
+                {% for message in messages %}
+                    <p>{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+{% endblock %}

@@ -933,24 +933,26 @@ def delete_competition(competition_id):
 
 
 
-
-
 # --------------------------------------------------------------------------------------------------------------------
 # Standings route details
 # Standings route
 @main.route('/standings', methods=['GET'])
 def standings():
-    # Connect to the database and fetch standings information
+    # Connect to the database and fetch standings information with competition name, club name, and year
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute("""
         SELECT 
-            Standing_ID, 
-            Competition_ID, 
-            Club_stats_ID, 
-            Year_ID, 
-            Total_points 
-        FROM Standings
+            s.Standing_ID, 
+            c.Competition_Name, 
+            cl.Club_Name, 
+            y.Year, 
+            s.Total_points 
+        FROM Standings s
+        JOIN Competition c ON s.Competition_ID = c.Competition_ID
+        JOIN Club_stats cs ON s.Club_stats_ID = cs.Club_Stats_ID
+        JOIN Club cl ON cs.Club_ID = cl.Club_ID
+        JOIN Year y ON s.Year_ID = y.Year_ID
     """)
     standings = cursor.fetchall()
     connection.close()
@@ -958,27 +960,137 @@ def standings():
     return render_template('standings.html', standings=standings)
 
 
-# Add standings route
-@main.route('/add_standings', methods=['GET'])
-def add_standings_page():
+# Add standing route
+@main.route('/add_standing', methods=['GET'])
+def add_standing_page():
     # Connect to the database to fetch necessary data for dropdowns
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Fetch available competitions, clubs stats, and years
-    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")  # Assuming Competition table has Competition_Name
+    # Fetch available competitions, club stats with club names, and years
+    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")
     competitions = cursor.fetchall()
 
-    cursor.execute("SELECT Club_Stats_ID FROM Club_stats")  # Assuming we only need the ID here
+    cursor.execute("SELECT Club_stats.Club_Stats_ID, Club.Club_Name FROM Club_stats JOIN Club ON Club_stats.Club_ID = Club.Club_ID")
     club_stats = cursor.fetchall()
     
     cursor.execute("SELECT Year_ID, Year FROM Year")
     years = cursor.fetchall()
-    
+
     connection.close()
     
-    return render_template('standings/add_standings.html', competitions=competitions, club_stats=club_stats, years=years)
+    return render_template('standings/add_standing.html', competitions=competitions, club_stats=club_stats, years=years)
 
 
 
 
+# Create standing route
+@main.route('/create_standing', methods=['POST'])
+def create_standing():
+    # Get form data for the new standing entry
+    competition_id = request.form['competition_id']
+    club_stats_id = request.form['club_stats_id']
+    year_id = request.form['year_id']
+    total_points = request.form['total_points']
+    
+    # Connect to the database and insert the new standing
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        INSERT INTO Standings (Competition_ID, Club_stats_ID, Year_ID, Total_points) 
+        VALUES (?, ?, ?, ?)
+        """,
+        (competition_id, club_stats_id, year_id, total_points)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.standings'))
+
+
+
+# Edit standing route
+@main.route('/standing/<int:standing_id>/edit', methods=['GET'])
+def edit_standing(standing_id):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch standing details
+    cursor.execute("""
+        SELECT 
+            s.Standing_ID, 
+            s.Competition_ID, 
+            s.Club_stats_ID, 
+            s.Year_ID, 
+            s.Total_points 
+        FROM Standings s
+        WHERE s.Standing_ID = ?
+    """, (standing_id,))
+    standing = cursor.fetchone()
+
+    # Fetch available competitions, clubs stats, and years for dropdowns
+    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")
+    competitions = cursor.fetchall()
+
+    cursor.execute("SELECT Club_Stats_ID, Club_Name FROM Club JOIN Club_stats ON Club.Club_ID = Club_stats.Club_ID")
+    club_stats = cursor.fetchall()
+    
+    cursor.execute("SELECT Year_ID, Year FROM Year")
+    years = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return render_template('standings/update_standing.html', standing=standing, competitions=competitions, club_stats=club_stats, years=years)
+
+
+
+
+# Update standing route
+@main.route('/standing/<int:standing_id>/update', methods=['POST'])
+def update_standing(standing_id):
+    # Get form data
+    competition_id = request.form['competition_id']
+    club_stats_id = request.form['club_stats_id']
+    year_id = request.form['year_id']
+    total_points = request.form['total_points']
+
+    # Connect to the database and update the standing
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        UPDATE Standings 
+        SET Competition_ID = ?, Club_stats_ID = ?, Year_ID = ?, Total_points = ?
+        WHERE Standing_ID = ?
+        """,
+        (competition_id, club_stats_id, year_id, total_points, standing_id)
+    )
+    connection.commit()
+    cursor.close()
+    connection.close()
+    
+    return redirect(url_for('main.standings'))
+
+
+
+# Delete standing route
+@main.route('/delete_standing/<int:standing_id>', methods=['POST'])
+def delete_standing(standing_id):
+    try:
+        print(f"Attempting to delete standing with ID: {standing_id}")
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM Standings WHERE Standing_ID = ?", (standing_id,))
+                print(f"Delete executed for Standing ID {standing_id}")
+                connection.commit()
+                print(f"Standing with ID {standing_id} deleted successfully.")
+            connection.close()
+        flash("Standing deleted successfully", "success")
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", "danger")
+        print(f"Error during deletion: {e}")
+    return redirect(url_for('main.standings'))

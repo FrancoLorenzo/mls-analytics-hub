@@ -11,23 +11,26 @@
         <thead>
             <tr>
                 <th>Standing ID</th>
-                <th>Competition ID</th>
-                <th>Club Stats ID</th>
-                <th>Year ID</th>
+                <th>Competition Name</th>
+                <th>Club Name</th>
+                <th>Year</th>
                 <th>Total Points</th>
-                <th><a href="{{ url_for('main.add_standings_page') }}" class="btn btn-primary mt-2" style="margin-left: 15px;">Add Standing</a></th>
+                <th><a href="{{ url_for('main.add_standing_page') }}" class="btn btn-primary mt-2" style="margin-left: 15px;">Add Standing</a></th>
             </tr>
         </thead>
         <tbody>
             {% for standing in standings %}
                 <tr>
                     <td>{{ standing.Standing_ID }}</td>
-                    <td>{{ standing.Competition_ID }}</td>
-                    <td>{{ standing.Club_stats_ID }}</td>
-                    <td>{{ standing.Year_ID }}</td>
+                    <td>{{ standing.Competition_Name }}</td>
+                    <td>{{ standing.Club_Name }}</td>
+                    <td>{{ standing.Year }}</td>
                     <td>{{ standing.Total_points }}</td>
                     <td>
-
+                        <a href="{{ url_for('main.edit_standing', standing_id=standing.Standing_ID) }}" class="btn btn-primary mt-2">Edit</a>
+                        <form action="{{ url_for('main.delete_standing', standing_id=standing.Standing_ID) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger mt-2" onclick="return confirm('Are you sure you want to delete this standing?');">Delete</button>
+                        </form>
                     </td>
                 </tr>
             {% endfor %}
