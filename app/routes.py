@@ -935,29 +935,67 @@ def delete_competition(competition_id):
 
 # --------------------------------------------------------------------------------------------------------------------
 # Standings route details
-# Standings route
+# Standings route with filters and additional columns
 @main.route('/standings', methods=['GET'])
 def standings():
-    # Connect to the database and fetch standings information with competition name, club name, and year
+    # Get filter parameters from query string
+    competition_id = request.args.get('competition_id')
+    year_id = request.args.get('year_id')
+    
+    # Connect to the database
     connection = get_db_connection()
     cursor = connection.cursor()
-    cursor.execute("""
+
+    # Build SQL query with optional filters
+    query = """
         SELECT 
             s.Standing_ID, 
             c.Competition_Name, 
             cl.Club_Name, 
             y.Year, 
-            s.Total_points 
+            s.Total_points, 
+            cs.Total_Wins, 
+            cs.Total_Losses, 
+            cs.Total_Draws
         FROM Standings s
         JOIN Competition c ON s.Competition_ID = c.Competition_ID
         JOIN Club_stats cs ON s.Club_stats_ID = cs.Club_Stats_ID
         JOIN Club cl ON cs.Club_ID = cl.Club_ID
         JOIN Year y ON s.Year_ID = y.Year_ID
-    """)
-    standings = cursor.fetchall()
-    connection.close()
+    """
+    filters = []
+    if competition_id:
+        query += " WHERE s.Competition_ID = ?"
+        filters.append(competition_id)
+    if year_id:
+        if filters:
+            query += " AND s.Year_ID = ?"
+        else:
+            query += " WHERE s.Year_ID = ?"
+        filters.append(year_id)
     
-    return render_template('standings.html', standings=standings)
+    cursor.execute(query, filters)
+    standings = cursor.fetchall()
+
+    # Fetch options for filters
+    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")
+    competitions = cursor.fetchall()
+    
+    cursor.execute("SELECT Year_ID, Year FROM Year")
+    years = cursor.fetchall()
+
+    connection.close()
+
+    return render_template(
+        'standings.html', 
+        standings=standings, 
+        competitions=competitions, 
+        years=years,
+        selected_competition=competition_id,
+        selected_year=year_id
+    )
+
+
 
 
 # Add standing route
@@ -991,7 +1029,6 @@ def create_standing():
     competition_id = request.form['competition_id']
     club_stats_id = request.form['club_stats_id']
     year_id = request.form['year_id']
-    total_points = request.form['total_points']
     
     # Connect to the database and insert the new standing
     connection = get_db_connection()
@@ -1001,7 +1038,7 @@ def create_standing():
         INSERT INTO Standings (Competition_ID, Club_stats_ID, Year_ID, Total_points) 
         VALUES (?, ?, ?, ?)
         """,
-        (competition_id, club_stats_id, year_id, total_points)
+        (competition_id, club_stats_id, year_id, 0)
     )
     connection.commit()
     cursor.close()
