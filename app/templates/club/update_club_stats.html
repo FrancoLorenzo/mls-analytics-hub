@@ -21,6 +21,22 @@
         </div>
     </div>
 
+    <!-- Competition Selection -->
+    <div class="form-group row">
+        <label for="club_id" class="col-sm-3 col-form-label">Competition:</label>
+        <div class="col-sm-9">
+            <select id="competition_id" name="competition_id" class="form-control" required>
+                <option value="">Select Competition</option>
+                {% for competition in competitions %}
+                    <option value="{{ competition['Competition_ID'] }}" {% if competition['Competition_ID'] == club_stats['Competition_ID'] %}selected{% endif %}>
+                        {{ competition['Competition_Name'] }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+
     <!-- Year Selection -->
     <div class="form-group row">
         <label for="year_id" class="col-sm-3 col-form-label">Year:</label>

@@ -6,35 +6,46 @@
     <h1>Add a New Club</h1>
     <p>Add the details for the new club.</p>
     <br>
-    <form action="{{ url_for('main.create_club') }}" method="post">
-      <div class="form-group">
-          <label for="conference_id">Conference:</label>
-          <select id="conference_id" name="conference_id" class="form-control" required>
-              <option value="">Select a conference</option>
-              {% for conference in conferences %}
-                  <option value="{{ conference[0] }}">{{ conference[1] }}</option>
-              {% endfor %}
-          </select>
-      </div>
-      <div class="form-group">
-          <label for="club_name">Club Name:</label>
-          <input type="text" id="club_name" name="club_name" class="form-control" required>
-      </div>
-      <div class="form-group">
-          <label for="club_abbr">Club Abbreviation:</label>
-          <input type="text" id="club_abbr" name="club_abbr" class="form-control" maxlength="10" required>
-      </div>
-      <div class="form-group">
-          <label for="established_date">Established Date:</label>
-          <input type="date" id="established_date" name="established_date" class="form-control" required>
-      </div>
-      <div class="form-group">
-          <label for="club_badge">Club Badge URL:</label>
-          <input type="text" id="club_badge" name="club_badge" class="form-control">
-      </div>
-      <button type="submit" class="btn btn-success">Save</button>
-      <a href="{{ url_for('main.clubs') }}" class="btn btn-secondary">Cancel</a>
-  </form>
+    <div class="row">
+        <!-- Club Badge Display -->
+        <div class="col-md-6 text-center">
+            <img src="{{ url_for('static', filename='img/New-Team-logo.png') }}" alt="Club Badge" class="img-fluid" style="max-width: 100%; border: 1px solid #ddd; padding: 10px;">
+
+        </div>
+
+        <!-- Club Details Form -->
+        <div class="col-md-6">
+            <form action="{{ url_for('main.create_club') }}" method="post">
+                <div class="form-group">
+                    <label for="conference_id">Conference:</label>
+                    <select id="conference_id" name="conference_id" class="form-control" required>
+                        <option value="">Select a conference</option>
+                        {% for conference in conferences %}
+                            <option value="{{ conference[0] }}">{{ conference[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="club_name">Club Name:</label>
+                    <input type="text" id="club_name" name="club_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="club_abbr">Club Abbreviation:</label>
+                    <input type="text" id="club_abbr" name="club_abbr" class="form-control" maxlength="10" required>
+                </div>
+                <div class="form-group">
+                    <label for="established_date">Established Date:</label>
+                    <input type="date" id="established_date" name="established_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="club_badge">Club Badge URL:</label>
+                    <input type="text" id="club_badge" name="club_badge" class="form-control" oninput="updateBadgePreview()">
+                </div>
+                <button type="submit" class="btn btn-success">Save</button>
+                <a href="{{ url_for('main.clubs') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
 
     <!-- Flash Messages for Feedback -->
     {% with messages = get_flashed_messages() %}
@@ -46,4 +57,17 @@
         </div>
       {% endif %}
     {% endwith %}
+
+    <script>
+        // Update the badge preview image when a URL is entered
+        function updateBadgePreview() {
+            const badgeUrl = document.getElementById('club_badge').value;
+            const badgePreview = document.getElementById('clubBadgePreview');
+            if (badgeUrl) {
+                badgePreview.src = badgeUrl;
+            } else {
+                badgePreview.src = 'https://via.placeholder.com/300x300?text=Club+Badge';
+            }
+        }
+    </script>
 {% endblock %}

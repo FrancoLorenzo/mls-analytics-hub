@@ -45,7 +45,6 @@
     <table class="table table-striped mt-3">
         <thead>
             <tr>
-                <th>Competition Name</th>
                 <th>Club Name</th>
                 <th>Year</th>
                 <th>Total Wins</th>
@@ -58,7 +57,6 @@
         <tbody>
             {% for standing in standings %}
                 <tr>
-                    <td>{{ standing.Competition_Name }}</td>
                     <td>{{ standing.Club_Name }}</td>
                     <td>{{ standing.Year }}</td>
                     <td class="text-center">{{ standing.Total_Wins }}</td>

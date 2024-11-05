@@ -1,59 +1,61 @@
 {% extends "layout.html" %}
 
-{% block title %}Add New Club Stats{% endblock %}
+{% block title %}Add New Club Stat{% endblock %}
 
 {% block content %}
-    <h1>Add New Club Stats</h1>
-    <p>Enter the details for the club's statistics.</p>
-    <br>
+    <h1>Add a New Club Stat</h1>
     <form action="{{ url_for('main.create_club_stats') }}" method="post">
+        
+        <!-- Club Selection -->
         <div class="form-group">
             <label for="club_id">Club:</label>
             <select id="club_id" name="club_id" class="form-control" required>
                 <option value="">Select Club</option>
                 {% for club in clubs %}
-                    <option value="{{ club[0] }}">{{ club[1] }}</option>
+                    <option value="{{ club['Club_ID'] }}">{{ club['Club_Name'] }}</option>
                 {% endfor %}
             </select>
         </div>
         
+        <!-- Year Selection -->
         <div class="form-group">
             <label for="year_id">Year:</label>
             <select id="year_id" name="year_id" class="form-control" required>
                 <option value="">Select Year</option>
                 {% for year in years %}
-                    <option value="{{ year[0] }}">{{ year[1] }}</option>
+                    <option value="{{ year['Year_ID'] }}">{{ year['Year'] }}</option>
                 {% endfor %}
             </select>
         </div>
 
+        <!-- Competition Selection -->
+        <div class="form-group">
+            <label for="competition_id">Competition:</label>
+            <select id="competition_id" name="competition_id" class="form-control" required>
+                <option value="">Select Competition</option>
+                {% for competition in competitions %}
+                    <option value="{{ competition['Competition_ID'] }}">{{ competition['Competition_Name'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Total Wins, Losses, Draws Inputs -->
         <div class="form-group">
             <label for="total_wins">Total Wins:</label>
-            <input type="number" id="total_wins" name="total_wins" class="form-control" required>
+            <input type="number" id="total_wins" name="total_wins" class="form-control" value="0" required>
         </div>
-
+        
         <div class="form-group">
             <label for="total_losses">Total Losses:</label>
-            <input type="number" id="total_losses" name="total_losses" class="form-control" required>
+            <input type="number" id="total_losses" name="total_losses" class="form-control" value="0" required>
         </div>
-
+        
         <div class="form-group">
             <label for="total_draws">Total Draws:</label>
-            <input type="number" id="total_draws" name="total_draws" class="form-control" required>
+            <input type="number" id="total_draws" name="total_draws" class="form-control" value="0" required>
         </div>
 
         <button type="submit" class="btn btn-success">Save</button>
         <a href="{{ url_for('main.clubs_stats') }}" class="btn btn-secondary">Cancel</a>
     </form>
-
-    <!-- Flash Messages for Feedback -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="alert alert-info" role="alert">
-                {% for message in messages %}
-                    <p>{{ message }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
 {% endblock %}

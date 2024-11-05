@@ -6,35 +6,57 @@
     <h1>Add a New Player</h1>
     <p>Add the details for the new player.</p>
     <br>
-    <form action="{{ url_for('main.create_player') }}" method="post">
-          <div class="form-group">
-            <div class="form-group">
-              <label for="club_id">Club:</label>
-              <select id="club_id" name="club_id" class="form-control" required>
-                  <option value="">Select a club</option>
-                  {% for club in clubs %}
-                      <option value="{{ club[0] }}">{{ club[1] }}</option>
-                  {% endfor %}
-              </select>
-          </div>
-          <label for="player_first_name">Player First Name:</label>
-          <input type="text" id="player_first_name" name="player_first_name" class="form-control" required>
-          <label for="player_last_name">Player Last Name:</label>
-          <input type="text" id="player_last_name" name="player_last_name" class="form-control" required>
-          <label for="birth_date">Birth date:</label>
-          <input type="date" id="birth_date" name="birth_date" class="form-control" required>
-          <label for="birthplace">Birth place:</label>
-          <input type="text" id="birthplace" name="birthplace" class="form-control" required>          
-          <label for="height">Height (meters):</label>
-          <input type="text" id="height" name="height" class="form-control" required>
-          <label for="weight">Weight (kilograms):</label>
-          <input type="text" id="weight" name="weight" class="form-control" required>
-          <label for="position">Position:</label>
-          <input type="text" id="position" name="position" class="form-control" required>
-      </div>
-      <button type="submit" class="btn btn-success">Save</button>
-      <a href="{{ url_for('main.players') }}" class="btn btn-secondary">Cancel</a>
-  </form>
+    <div class="row">
+        <!-- Player Profile Image Display -->
+        <div class="col-md-6 text-center">
+          <img src="{{ url_for('static', filename='img/Free-Agent-logo.png') }}" alt="Club Badge" class="img-fluid" style="max-width: 100%; border: 1px solid #ddd; padding: 10px;">
+        </div>
+
+        <!-- Player Details Form -->
+        <div class="col-md-6">
+            <form action="{{ url_for('main.create_player') }}" method="post">
+                <div class="form-group">
+                    <label for="club_id">Club:</label>
+                    <select id="club_id" name="club_id" class="form-control" required>
+                        <option value="">Select a club</option>
+                        {% for club in clubs %}
+                            <option value="{{ club[0] }}">{{ club[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="player_first_name">Player First Name:</label>
+                    <input type="text" id="player_first_name" name="player_first_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="player_last_name">Player Last Name:</label>
+                    <input type="text" id="player_last_name" name="player_last_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="birth_date">Birth Date:</label>
+                    <input type="date" id="birth_date" name="birth_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="birthplace">Birth Place:</label>
+                    <input type="text" id="birthplace" name="birthplace" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="height">Height (meters):</label>
+                    <input type="text" id="height" name="height" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="weight">Weight (kilograms):</label>
+                    <input type="text" id="weight" name="weight" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="position">Position:</label>
+                    <input type="text" id="position" name="position" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success">Save</button>
+                <a href="{{ url_for('main.players') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
 
     <!-- Flash Messages for Feedback -->
     {% with messages = get_flashed_messages() %}
@@ -46,4 +68,17 @@
         </div>
       {% endif %}
     {% endwith %}
+
+    <script>
+        // Update the profile image preview when a URL is entered (if an image field is added in the future)
+        function updateProfilePreview() {
+            const profileUrl = document.getElementById('player_profile_url').value;
+            const profilePreview = document.getElementById('playerProfilePreview');
+            if (profileUrl) {
+                profilePreview.src = profileUrl;
+            } else {
+                profilePreview.src = 'https://via.placeholder.com/300x300?text=Player+Profile';
+            }
+        }
+    </script>
 {% endblock %}

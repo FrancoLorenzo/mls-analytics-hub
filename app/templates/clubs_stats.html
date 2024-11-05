@@ -22,6 +22,7 @@
         <thead>
             <tr>
                 <th>Club Name</th>
+                <th>Competition</th>
                 <th>Year</th>
                 <th class="text-center">Total Wins</th>
                 <th class="text-center">Total Losses</th>
@@ -35,6 +36,7 @@
             {% for stat in clubs_stats %}
                 <tr>
                     <td>{{ stat.Club_Name }}</td>
+                    <td>{{ stat.Competition_Name }}</td>
                     <td>{{ stat.Year }}</td>
                     <td class="text-center">{{ stat.Total_Wins }}</td>
                     <td class="text-center">{{ stat.Total_Losses }}</td>

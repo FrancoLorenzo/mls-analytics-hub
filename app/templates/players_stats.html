@@ -17,55 +17,68 @@
       {% endif %}
     {% endwith %}
 
-    <!-- Player Stats Table -->
-    <table class="table table-striped mt-3">
-        <thead>
-            <tr>
-                <th>Player Name</th>
-                <th>Year</th>
-                <th class="text-center">Goals</th>
-                <th class="text-center">Passes</th>
-                <th class="text-center">Passes Complete</th>
-                <th class="text-center">Assists</th>
-                <th class="text-center">Free Kicks</th>
-                <th class="text-center">Corner Kicks</th>
-                <th class="text-center">Fouls</th>
-                <th class="text-center">Fouls Suffered</th>
-                <th class="text-center">Offside</th>
-                <th class="text-center">Yellow Cards</th>
-                <th class="text-center">Red Cards</th>
-                <th>
-                    <a href="{{ url_for('main.add_player_stats') }}" class="btn btn-primary mt-2" style="margin-left: 15px;">Add Player Stat</a>
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for stat in players_stats %}
-                <tr>
-                    <td>{{ stat[2] }}</td> <!-- Player_Name -->
-                    <td>{{ stat[3] }}</td> <!-- Year -->
-                    <td class="text-center">{{ stat[4] }}</td> <!-- Goals -->
-                    <td class="text-center">{{ stat[5] }}</td> <!-- Passes -->
-                    <td class="text-center">{{ stat[6] }}</td> <!-- Passes_complete -->
-                    <td class="text-center">{{ stat[7] }}</td> <!-- Assists -->
-                    <td class="text-center">{{ stat[8] }}</td> <!-- Free_kicks -->
-                    <td class="text-center">{{ stat[9] }}</td> <!-- Corner_kicks -->
-                    <td class="text-center">{{ stat[10] }}</td> <!-- Fouls -->
-                    <td class="text-center">{{ stat[11] }}</td> <!-- Fouls_suffered -->
-                    <td class="text-center">{{ stat[12] }}</td> <!-- Offside -->
-                    <td class="text-center">{{ stat[13] }}</td> <!-- Yellow_cards -->
-                    <td class="text-center">{{ stat[14] }}</td> <!-- Red_cards -->
-                    <td>
-                        <!-- Corrected Edit Link -->
-                        <a href="{{ url_for('main.edit_player_stat', player_stat_id=stat[0]) }}" class="btn btn-primary mt-2">Edit</a>
-                        
-                        <!-- Corrected Delete Form -->
-                        <form action="{{ url_for('main.delete_player_stat', player_stat_id=stat[0]) }}" method="POST" style="display:inline;">
-                            <button type="submit" class="btn btn-danger mt-2" onclick="return confirm('Are you sure you want to delete this player stat?');">Delete</button>
-                        </form>
-                    </td>
-                </tr>
+    <!-- Year Filter Dropdown -->
+    <form method="GET" action="{{ url_for('main.players_stats') }}" class="d-flex align-items-center mb-3">
+        <label for="year_id" class="me-2 mb-0">Filter by Year:</label>
+        <select name="year_id" id="year_id" class="form-control me-2 w-auto">
+            <option value="">All Years</option>
+            {% for year in years %}
+                <option value="{{ year[0] }}" {% if year[0]|string == selected_year %}selected{% endif %}>
+                    {{ year[1] }}
+                </option>
             {% endfor %}
-        </tbody>
-    </table>
+        </select>
+        <button type="submit" class="btn btn-primary" style="margin-left: 8px;">Apply Filter</button>
+        <a href="{{ url_for('main.players_stats') }}" class="btn btn-secondary ml-2">Clear Filters</a>
+    </form>
+
+    <!-- Player Stats Table -->
+    <div class="table-responsive">
+        <table class="table table-striped table-sm mt-3">
+            <thead>
+                <tr>
+                    <th class="angled-header" style="width: 150px;">Player Name</th>
+                    <th class="angled-header text-center" style="width: 50px;">Goals</th>
+                    <th class="angled-header text-center" style="width: 50px;">Passes</th>
+                    <th class="angled-header text-center" style="width: 70px;">Passes Complete</th>
+                    <th class="angled-header text-center" style="width: 50px;">Assists</th>
+                    <th class="angled-header text-center" style="width: 60px;">Free Kicks</th>
+                    <th class="angled-header text-center" style="width: 60px;">Corner Kicks</th>
+                    <th class="angled-header text-center" style="width: 50px;">Fouls</th>
+                    <th class="angled-header text-center" style="width: 70px;">Fouls Suffered</th>
+                    <th class="angled-header text-center" style="width: 50px;">Offside</th>
+                    <th class="angled-header text-center" style="width: 70px;">Yellow Cards</th>
+                    <th class="angled-header text-center" style="width: 50px;">Red Cards</th>
+                    <th class="text-center" style="width: 110px;">
+                            <!-- Add Stat Button -->
+                            <a href="{{ url_for('main.add_player_stats') }}" class="btn btn-primary">Add Stat</a>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in players_stats %}
+                    <tr>
+                        <td class="text-nowrap py-1 px-1" style="width: 150px;">{{ stat[2] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 50px;">{{ stat[4] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 50px;">{{ stat[5] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 70px;">{{ stat[6] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 50px;">{{ stat[7] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 60px;">{{ stat[8] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 60px;">{{ stat[9] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 50px;">{{ stat[10] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 70px;">{{ stat[11] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 50px;">{{ stat[12] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 70px;">{{ stat[13] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 50px;">{{ stat[14] }}</td>
+                        <td class="text-center py-1 px-1" style="width: 110px;">
+                            <a href="{{ url_for('main.edit_player_stat', player_stat_id=stat[0]) }}" class="btn btn-primary btn-sm me-1">Edit</a>
+                            <form action="{{ url_for('main.delete_player_stat', player_stat_id=stat[0]) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this player stat?');">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}

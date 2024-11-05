@@ -32,7 +32,8 @@
                                 </option>
                             {% endfor %}
                         </select>
-                        <button type="submit" class="btn btn-secondary" style="margin-left: 8px;">Apply Filter</button>
+                        <button type="submit" class="btn btn-primary" style="margin-left: 8px;">Apply Filter</button>
+                        <a href="{{ url_for('main.players') }}" class="btn btn-secondary ml-2">Clear Filters</a>
                     </form>
                 </th>
                 <th></th>

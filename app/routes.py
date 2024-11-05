@@ -509,10 +509,15 @@ def delete_player(player_id):
 # Player stats route
 @main.route('/players_stats', methods=['GET'])
 def players_stats():
-    # Connect to the database and fetch player stats with player first names and year numbers
+    # Get the year filter parameter from the query string
+    year_id = request.args.get('year_id')
+    
+    # Connect to the database
     connection = get_db_connection()
     cursor = connection.cursor()
-    cursor.execute("""
+
+    # Build SQL query with an optional year filter
+    query = """
         SELECT 
             ps.Player_stats_ID, 
             ps.Player_ID, 
@@ -535,11 +540,30 @@ def players_stats():
             Player p ON ps.Player_ID = p.Player_ID
         JOIN 
             Year y ON ps.Year_ID = y.Year_ID
-    """)
+    """
+
+    # Add filter condition if a year is selected
+    filters = []
+    if year_id:
+        query += " WHERE ps.Year_ID = ?"
+        filters.append(year_id)
+    
+    cursor.execute(query, filters)
     players_stats = cursor.fetchall()
+    
+    # Fetch available years for the filter dropdown
+    cursor.execute("SELECT Year_ID, Year FROM Year")
+    years = cursor.fetchall()
+
     connection.close()
     
-    return render_template('players_stats.html', players_stats=players_stats)
+    return render_template(
+        'players_stats.html', 
+        players_stats=players_stats, 
+        years=years,
+        selected_year=year_id
+    )
+
 
 
 # Add player stats route
@@ -702,6 +726,7 @@ def clubs_stats():
         SELECT 
             cs.Club_Stats_ID, 
             c.Club_Name, 
+            co.Competition_Name,
             y.Year, 
             cs.Total_Wins, 
             cs.Total_Losses, 
@@ -709,6 +734,7 @@ def clubs_stats():
         FROM Club_stats cs
         JOIN Club c ON cs.Club_ID = c.Club_ID
         JOIN Year y ON cs.Year_ID = y.Year_ID
+        JOIN Competition co ON cs.Competition_ID = co.Competition_ID
     """)
     clubs_stats = cursor.fetchall()
     connection.close()
@@ -719,7 +745,6 @@ def clubs_stats():
 # Add club stats route
 @main.route('/add_club_stats', methods=['GET'])
 def add_club_stats_page():
-    # Connect to the database if additional data is needed, e.g., club or year options
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute("SELECT Club_ID, Club_Name FROM Club")  # Fetch available clubs
@@ -727,9 +752,14 @@ def add_club_stats_page():
     
     cursor.execute("SELECT Year_ID, Year FROM Year")  # Fetch available years
     years = cursor.fetchall()
+
+    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")  # Fetch available competitions
+    competitions = cursor.fetchall()
+    
     connection.close()
     
-    return render_template('club/add_club_stats.html', clubs=clubs, years=years)
+    return render_template('club/add_club_stats.html', clubs=clubs, years=years, competitions=competitions)
+
 
 
 # Create club stats route
@@ -738,6 +768,7 @@ def create_club_stats():
     # Get form data for club stats
     club_id = request.form['club_id']
     year_id = request.form['year_id']
+    competition_id = request.form['competition_id']
     total_wins = request.form['total_wins']
     total_losses = request.form['total_losses']
     total_draws = request.form['total_draws']
@@ -746,9 +777,9 @@ def create_club_stats():
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute(
-        "INSERT INTO Club_stats (Club_ID, Year_ID, Total_Wins, Total_Losses, Total_Draws) "
-        "VALUES (?, ?, ?, ?, ?)", 
-        (club_id, year_id, total_wins, total_losses, total_draws)
+        "INSERT INTO Club_stats (Club_ID, Year_ID, Competition_ID, Total_Wins, Total_Losses, Total_Draws) "
+        "VALUES (?, ?, ?, ?, ?, ?)", 
+        (club_id, year_id, competition_id, total_wins, total_losses, total_draws)
     )
     connection.commit()
     cursor.close()
@@ -766,12 +797,13 @@ def edit_club_stats(club_stats_id):
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Fetch club stats details
+    # Fetch club stats details including Competition_ID
     cursor.execute("""
         SELECT 
             cs.Club_Stats_ID, 
             cs.Club_ID, 
-            cs.Year_ID, 
+            cs.Year_ID,
+            cs.Competition_ID,
             cs.Total_Wins, 
             cs.Total_Losses, 
             cs.Total_Draws 
@@ -780,17 +812,21 @@ def edit_club_stats(club_stats_id):
     """, (club_stats_id,))
     club_stats = cursor.fetchone()
 
-    # Fetch available clubs and years for dropdowns
+    # Fetch available clubs, years, and competitions for dropdowns
     cursor.execute("SELECT Club_ID, Club_Name FROM Club")
     clubs = cursor.fetchall()
     
     cursor.execute("SELECT Year_ID, Year FROM Year")
     years = cursor.fetchall()
 
+    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")
+    competitions = cursor.fetchall()
+
     cursor.close()
     connection.close()
 
-    return render_template('club/update_club_stats.html', club_stats=club_stats, clubs=clubs, years=years)
+    return render_template('club/update_club_stats.html', club_stats=club_stats, clubs=clubs, years=years, competitions=competitions)
+
 
 
 # Update club stats route
@@ -799,6 +835,7 @@ def update_club_stats(club_stats_id):
     # Get form data
     club_id = request.form['club_id']
     year_id = request.form['year_id']
+    competition_id = request.form['competition_id']
     total_wins = request.form['total_wins']
     total_losses = request.form['total_losses']
     total_draws = request.form['total_draws']
@@ -809,19 +846,19 @@ def update_club_stats(club_stats_id):
     cursor.execute(
         """
         UPDATE Club_stats 
-        SET Club_ID = ?, Year_ID = ?, Total_Wins = ?, Total_Losses = ?, Total_Draws = ?
+        SET Club_ID = ?, Year_ID = ?, Competition_ID = ?, Total_Wins = ?, Total_Losses = ?, Total_Draws = ?
         WHERE Club_Stats_ID = ?
         """, 
-        (club_id, year_id, total_wins, total_losses, total_draws, club_stats_id)
+        (club_id, year_id, competition_id, total_wins, total_losses, total_draws, club_stats_id)
     )
     connection.commit()
     cursor.close()
     connection.close()
 
-    # Flash success message
     flash("Club stats updated successfully!", "success")
 
     return redirect(url_for('main.clubs_stats'))
+
 
 
 # Delete club stats route
@@ -950,7 +987,7 @@ def delete_competition(competition_id):
 #endregion
 
 #region Standings routes
-# Standings route with filters and additional columns, ordered by Total_points DESC
+# Standings route
 @main.route('/standings', methods=['GET'])
 def standings():
     # Get filter parameters from query string
@@ -965,22 +1002,23 @@ def standings():
     query = """
         SELECT 
             s.Standing_ID, 
-            c.Competition_Name, 
             cl.Club_Name, 
-            y.Year, 
+            y.Year,
+            co.Competition_Name, 
             s.Total_points, 
             cs.Total_Wins, 
             cs.Total_Losses, 
             cs.Total_Draws
         FROM Standings s
-        JOIN Competition c ON s.Competition_ID = c.Competition_ID
         JOIN Club_stats cs ON s.Club_stats_ID = cs.Club_Stats_ID
         JOIN Club cl ON cs.Club_ID = cl.Club_ID
         JOIN Year y ON s.Year_ID = y.Year_ID
+        JOIN Competition co ON cs.Competition_ID = co.Competition_ID
     """
+    
     filters = []
     if competition_id:
-        query += " WHERE s.Competition_ID = ?"
+        query += " WHERE cs.Competition_ID = ?"
         filters.append(competition_id)
     if year_id:
         if filters:
@@ -994,11 +1032,11 @@ def standings():
     
     cursor.execute(query, filters)
     standings = cursor.fetchall()
-
+    
     # Fetch options for filters
     cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")
     competitions = cursor.fetchall()
-    
+
     cursor.execute("SELECT Year_ID, Year FROM Year")
     years = cursor.fetchall()
 
@@ -1006,62 +1044,98 @@ def standings():
 
     return render_template(
         'standings.html', 
-        standings=standings, 
-        competitions=competitions, 
+        standings=standings,
+        competitions=competitions,
         years=years,
         selected_competition=competition_id,
         selected_year=year_id
     )
 
 
-# Add standing route
+
+# Add standing route with combined dropdown for Club, Competition, and Year
 @main.route('/add_standing', methods=['GET'])
 def add_standing_page():
-    # Connect to the database to fetch necessary data for dropdowns
+    # Connect to the database
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Fetch available competitions, club stats with club names, and years
-    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")
-    competitions = cursor.fetchall()
-
-    cursor.execute("SELECT Club_stats.Club_Stats_ID, Club.Club_Name FROM Club_stats JOIN Club ON Club_stats.Club_ID = Club.Club_ID")
-    club_stats = cursor.fetchall()
-    
-    cursor.execute("SELECT Year_ID, Year FROM Year")
-    years = cursor.fetchall()
+    # Fetch combined data for Club, Competition, and Year
+    cursor.execute("""
+        SELECT 
+            Club_stats.Club_Stats_ID, 
+            Club.Club_Name, 
+            Competition.Competition_Name, 
+            Year.Year
+        FROM Club_stats
+        JOIN Club ON Club_stats.Club_ID = Club.Club_ID
+        JOIN Competition ON Club_stats.Competition_ID = Competition.Competition_ID
+        JOIN Year ON Club_stats.Year_ID = Year.Year_ID
+    """)
+    club_competition_year = cursor.fetchall()
 
     connection.close()
     
-    return render_template('standings/add_standing.html', competitions=competitions, club_stats=club_stats, years=years)
+    return render_template('standings/add_standing.html', club_competition_year=club_competition_year)
+
+
+
 
 
 # Create standing route
 @main.route('/create_standing', methods=['POST'])
 def create_standing():
-    # Get form data for the new standing entry
-    competition_id = request.form['competition_id']
-    club_stats_id = request.form['club_stats_id']
-    year_id = request.form['year_id']
+    try:
+        # Get form data for the new standing entry
+        club_stats_id = request.form['club_stats_id']
+        
+        # Connect to the database
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        
+        # Retrieve Year_ID and stats (wins, losses, draws) from Club_stats for the selected Club_stats_ID
+        cursor.execute("""
+            SELECT Year_ID, Total_Wins, Total_Losses, Total_Draws 
+            FROM Club_stats 
+            WHERE Club_Stats_ID = ?
+        """, (club_stats_id,))
+        result = cursor.fetchone()
+        
+        if result is None:
+            flash("Error: Club stats not found for the selected Club Stats ID.", "danger")
+            return redirect(url_for('main.add_standing_page'))
+        
+        year_id, total_wins, total_losses, total_draws = result
+        
+        # Calculate Total_points based on wins, losses, and draws
+        total_points = (total_wins * 3) + (total_draws * 1) + (total_losses * 0)
+        
+        # Insert the new standing with Club_stats_ID, Year_ID, and calculated Total_points
+        cursor.execute(
+            """
+            INSERT INTO Standings (Club_stats_ID, Year_ID, Total_points) 
+            VALUES (?, ?, ?)
+            """,
+            (club_stats_id, year_id, total_points)
+        )
+        
+        # Commit transaction
+        connection.commit()
+        flash("Standing created successfully with calculated total points!", "success")
+    except Exception as e:
+        # Log and flash any errors
+        flash(f"An error occurred: {e}", "danger")
+        print(f"Error during standing creation: {e}")
+    finally:
+        cursor.close()
+        connection.close()
     
-    # Connect to the database and insert the new standing
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    cursor.execute(
-        """
-        INSERT INTO Standings (Competition_ID, Club_stats_ID, Year_ID, Total_points) 
-        VALUES (?, ?, ?, ?)
-        """,
-        (competition_id, club_stats_id, year_id, 0)
-    )
-    connection.commit()
-    cursor.close()
-    connection.close()
-    
-    # Flash success message
-    flash("Standing created successfully!", "success")
-
     return redirect(url_for('main.standings'))
+
+
+
+
+
 
 
 # Edit standing route
@@ -1070,11 +1144,10 @@ def edit_standing(standing_id):
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Fetch standing details
+    # Fetch standing details without Competition_ID (retrieve via Club_stats if needed)
     cursor.execute("""
         SELECT 
             s.Standing_ID, 
-            s.Competition_ID, 
             s.Club_stats_ID, 
             s.Year_ID, 
             s.Total_points 
@@ -1083,40 +1156,63 @@ def edit_standing(standing_id):
     """, (standing_id,))
     standing = cursor.fetchone()
 
-    # Fetch available competitions, clubs stats, and years for dropdowns
-    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")
-    competitions = cursor.fetchall()
-
-    cursor.execute("SELECT Club_Stats_ID, Club_Name FROM Club JOIN Club_stats ON Club.Club_ID = Club_stats.Club_ID")
+    # Fetch available club stats for dropdowns, including competition and year details
+    cursor.execute("""
+        SELECT 
+            cs.Club_Stats_ID, 
+            cl.Club_Name, 
+            co.Competition_Name, 
+            y.Year
+        FROM Club_stats cs
+        JOIN Club cl ON cs.Club_ID = cl.Club_ID
+        JOIN Competition co ON cs.Competition_ID = co.Competition_ID
+        JOIN Year y ON cs.Year_ID = y.Year_ID
+    """)
     club_stats = cursor.fetchall()
     
+    # Fetch available years for the dropdown (optional, depending on requirements)
     cursor.execute("SELECT Year_ID, Year FROM Year")
     years = cursor.fetchall()
 
     cursor.close()
     connection.close()
 
-    return render_template('standings/update_standing.html', standing=standing, competitions=competitions, club_stats=club_stats, years=years)
+    return render_template(
+        'standings/update_standing.html', 
+        standing=standing, 
+        club_stats=club_stats, 
+        years=years
+    )
+
 
 
 # Update standing route
 @main.route('/standing/<int:standing_id>/update', methods=['POST'])
 def update_standing(standing_id):
     # Get form data
-    competition_id = request.form['competition_id']
     club_stats_id = request.form['club_stats_id']
-    year_id = request.form['year_id']
+    total_points = request.form.get('total_points', 0)  # Assuming there's an input for total points
 
-    # Connect to the database and update the standing
+    # Connect to the database and fetch Year_ID based on Club_stats_ID
     connection = get_db_connection()
     cursor = connection.cursor()
+
+    # Retrieve the Year_ID associated with the selected Club_stats_ID
+    cursor.execute("SELECT Year_ID FROM Club_stats WHERE Club_Stats_ID = ?", (club_stats_id,))
+    year_id = cursor.fetchone()[0]
+    
+    if year_id is None:
+        flash("Error: Year_ID not found for the selected Club Stats.", "danger")
+        return redirect(url_for('main.edit_standing', standing_id=standing_id))
+
+    # Update the standing with the retrieved Year_ID
     cursor.execute(
         """
         UPDATE Standings 
-        SET Competition_ID = ?, Club_stats_ID = ?, Year_ID = ?, Total_points = ?
+        SET Club_stats_ID = ?, Year_ID = ?, Total_points = ?
         WHERE Standing_ID = ?
         """,
-        (competition_id, club_stats_id, year_id, 0, standing_id)
+        (club_stats_id, year_id, total_points, standing_id)
     )
     connection.commit()
     cursor.close()
@@ -1126,6 +1222,8 @@ def update_standing(standing_id):
     flash("Standing updated successfully!", "success")    
 
     return redirect(url_for('main.standings'))
+
+
 
 
 # Delete standing route

@@ -7,35 +7,16 @@
     <p>Enter the details for the new standing entry.</p>
     <br>
     <form action="{{ url_for('main.create_standing') }}" method="post">
-        <!-- Competition Selection -->
-        <div class="form-group">
-            <label for="competition_id">Competition:</label>
-            <select id="competition_id" name="competition_id" class="form-control" required>
-                <option value="">Select Competition</option>
-                {% for competition in competitions %}
-                    <option value="{{ competition[0] }}">{{ competition[1] }}</option>
-                {% endfor %}
-            </select>
-        </div>
         
-        <!-- Club Selection -->
+        <!-- Combined Club, Competition, and Year Selection -->
         <div class="form-group">
-            <label for="club_stats_id">Club:</label>
+            <label for="club_stats_id">Club - Competition - Year:</label>
             <select id="club_stats_id" name="club_stats_id" class="form-control" required>
-                <option value="">Select Club</option>
-                {% for club in club_stats %}
-                    <option value="{{ club[0] }}">{{ club[1] }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        
-        <!-- Year Selection -->
-        <div class="form-group">
-            <label for="year_id">Year:</label>
-            <select id="year_id" name="year_id" class="form-control" required>
-                <option value="">Select Year</option>
-                {% for year in years %}
-                    <option value="{{ year[0] }}">{{ year[1] }}</option>
+                <option value="">Select Club - Competition - Year</option>
+                {% for entry in club_competition_year %}
+                    <option value="{{ entry['Club_Stats_ID'] }}">
+                        {{ entry['Club_Name'] }} - {{ entry['Competition_Name'] }} - {{ entry['Year'] }}
+                    </option>
                 {% endfor %}
             </select>
         </div>

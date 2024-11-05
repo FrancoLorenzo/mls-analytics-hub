@@ -3,84 +3,80 @@
 {% block title %}Update Player{% endblock %}
 
 {% block content %}
-<h1>Update Player</h1>
-<p>Update the details for {{ player['Player_First_Name'] }} {{ player['Player_Last_Name'] }}.</p>
-<br>
-<br>
+    <h1>Update Player</h1>
+    <p>Update the details for {{ player['Player_First_Name'] }} {{ player['Player_Last_Name'] }}.</p>
+    <br>
+    <div class="row">
+        <!-- Player Profile Image Display -->
+        <div class="col-md-6 text-center">
+            <img src="{{ url_for('static', filename='img/Free-Agent-logo.png') }}" alt="Player Profile" class="img-fluid" style="max-width: 100%; border: 1px solid #ddd; padding: 10px;">
+        </div>
 
-<form action="{{ url_for('main.update_player', player_id=player['Player_ID']) }}" method="POST">
+        <!-- Player Details Form -->
+        <div class="col-md-6">
+            <form action="{{ url_for('main.update_player', player_id=player['Player_ID']) }}" method="POST">
+                <!-- Club Dropdown -->
+                <div class="form-group">
+                    <label for="club_id">Club:</label>
+                    <select name="club_id" id="club_id" class="form-control" required>
+                        {% for club in clubs %}
+                            <option value="{{ club[0] }}" {% if club[0] == player['Club_ID'] %}selected{% endif %}>
+                                {{ club[1] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-    <!-- Dropdown for Club -->
-    <div class="form-group row">
-        <label for="club_id" class="col-sm-3 col-form-label">Club:</label>
-        <div class="col-sm-9">
-            <select name="club_id" id="club_id" class="form-control" required>
-                {% for club in clubs %}
-                    <option value="{{ club[0] }}" {% if club[0] == player['Club_ID'] %}selected{% endif %}>
-                        {{ club[1] }}
-                    </option>
-                {% endfor %}
-            </select>
+                <!-- Player Details -->
+                <div class="form-group">
+                    <label for="player_first_name">Player First Name:</label>
+                    <input type="text" id="player_first_name" name="player_first_name" class="form-control" value="{{ player['Player_First_Name'] }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="player_last_name">Player Last Name:</label>
+                    <input type="text" id="player_last_name" name="player_last_name" class="form-control" value="{{ player['Player_Last_Name'] }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="birth_date">Birth Date:</label>
+                    <input type="date" id="birth_date" name="birth_date" class="form-control" value="{{ player['Birth_Date'] }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="birthplace">Birth Place:</label>
+                    <input type="text" id="birthplace" name="birthplace" class="form-control" value="{{ player['Birthplace'] }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="height">Height (meters):</label>
+                    <input type="number" id="height" name="height" class="form-control" value="{{ player['Height'] }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="weight">Weight (kilograms):</label>
+                    <input type="number" id="weight" name="weight" class="form-control" value="{{ player['Weight'] }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="position">Position:</label>
+                    <input type="text" id="position" name="position" class="form-control" value="{{ player['Position'] }}" required>
+                </div>
+
+                <button type="submit" class="btn btn-success">Save Changes</button>
+                <a href="{{ url_for('main.players') }}" class="btn btn-secondary">Cancel</a>
+            </form>
         </div>
     </div>
 
-    <!-- Player Details -->
-    <div class="form-group row">
-        <label for="player_first_name" class="col-sm-3 col-form-label">Player First Name:</label>
-        <div class="col-sm-9">
-            <input type="text" id="player_first_name" name="player_first_name" class="form-control" value="{{ player['Player_First_Name'] }}" required>
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info" role="alert">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
         </div>
-    </div>
-
-    <div class="form-group row">
-        <label for="player_last_name" class="col-sm-3 col-form-label">Player Last Name:</label>
-        <div class="col-sm-9">
-            <input type="text" id="player_last_name" name="player_last_name" class="form-control" value="{{ player['Player_Last_Name'] }}" required>
-        </div>
-    </div>
-
-    <div class="form-group row">
-        <label for="birth_date" class="col-sm-3 col-form-label">Birth Date:</label>
-        <div class="col-sm-9">
-            <input type="date" id="birth_date" name="birth_date" class="form-control" value="{{ player['Birth_Date'] }}" required>
-        </div>
-    </div>
-
-    <div class="form-group row">
-        <label for="birthplace" class="col-sm-3 col-form-label">Birth Place:</label>
-        <div class="col-sm-9">
-            <input type="text" id="birthplace" name="birthplace" class="form-control" value="{{ player['Birthplace'] }}" required>
-        </div>
-    </div>
-
-    <div class="form-group row">
-        <label for="height" class="col-sm-3 col-form-label">Height (meters):</label>
-        <div class="col-sm-9">
-            <input type="number" id="height" name="height" class="form-control" value="{{ player['Height'] }}" required>
-        </div>
-    </div>
-
-    <div class="form-group row">
-        <label for="weight" class="col-sm-3 col-form-label">Weight (kilograms):</label>
-        <div class="col-sm-9">
-            <input type="number" id="weight" name="weight" class="form-control" value="{{ player['Weight'] }}" required>
-        </div>
-    </div>
-
-    <div class="form-group row">
-        <label for="position" class="col-sm-3 col-form-label">Position:</label>
-        <div class="col-sm-9">
-            <input type="text" id="position" name="position" class="form-control" value="{{ player['Position'] }}" required>
-        </div>
-    </div>
-
-    <br><br>
-    <!-- Submit and Cancel Buttons -->
-    <div class="form-group row">
-        <div class="col-sm-9 offset-sm-3">
-            <button type="submit" class="btn btn-success">Save Changes</button>
-            <a href="{{ url_for('main.players') }}" class="btn btn-secondary">Cancel</a>
-        </div>
-    </div>
-</form>
+      {% endif %}
+    {% endwith %}
 {% endblock %}
