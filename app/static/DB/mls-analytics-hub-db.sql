@@ -34,11 +34,13 @@ CREATE TABLE Club_stats (
     Club_stats_ID INT PRIMARY KEY AUTO_INCREMENT,
     Club_ID INT,
     Year_ID INT,
+    Competition_ID INT,
     Total_Wins INT,
     Total_Losses INT,
     Total_Draws INT,
     FOREIGN KEY (Club_ID) REFERENCES Club(Club_ID),
-    FOREIGN KEY (Year_ID) REFERENCES Year(Year_ID)
+    FOREIGN KEY (Year_ID) REFERENCES Year(Year_ID),
+    FOREIGN KEY (Club_stats_ID) REFERENCES Club_stats(Club_stats_ID)
 );
 
 -- Create the Competition table
@@ -84,12 +86,10 @@ CREATE TABLE Player_stats (
 -- Create the Standings table
 CREATE TABLE Standings (
     Standing_ID INT PRIMARY KEY AUTO_INCREMENT,
-    Competition_ID INT,
     Club_stats_ID INT,
     Year_ID INT,
     Total_points INT,
     FOREIGN KEY (Competition_ID) REFERENCES Competition(Competition_ID),
-    FOREIGN KEY (Club_stats_ID) REFERENCES Club_stats(Club_stats_ID),
     FOREIGN KEY (Year_ID) REFERENCES Year(Year_ID)
 );
 
@@ -228,57 +228,95 @@ END //
 -- Stored Procedures for CRUD operations
 ----------------------------------------
 
--- Procedure to add a new year
-CREATE PROCEDURE add_new_year(
-    IN p_year_value INT
+-- Conference Stored Procedures
+
+-- Procedure to create a new conference
+DELIMITER //
+
+CREATE PROCEDURE create_conference(
+    IN conference_name VARCHAR(100)
 )
 BEGIN
-    INSERT INTO year (Year_Value)
-    VALUES (p_year_value);
+    INSERT INTO Conference (Conference_Name)
+    VALUES (conference_name);
 END //
 
---Call the procedure to add a new year
---CALL add_new_year(2025); -- Replace 2025 with the actual year value   
+DELIMITER ;
 
--- Procedure to add a new player
-CREATE PROCEDURE add_new_player(
-    IN p_first_name VARCHAR(50), 
-    IN p_last_name VARCHAR(50),
-    IN p_birth_date DATE, 
-    IN p_birthplace VARCHAR(100), 
-    IN p_height DECIMAL(4,2), 
-    IN p_weight DECIMAL(5,2), 
-    IN p_position VARCHAR(50), 
-    IN p_club_id INT
+-- Procedure to read conference data
+DELIMITER //
+
+CREATE PROCEDURE read_conference(
+    IN conference_id INT
 )
 BEGIN
-    INSERT INTO Player(Player_First_Name, Player_Last_Name, Birth_Date, Birthplace, Height, Weight, Position, Club_ID)
-    VALUES (p_first_name, p_last_name, p_birth_date, p_birthplace, p_height, p_weight, p_position, p_club_id);
+    IF conference_id IS NOT NULL THEN
+        SELECT * FROM Conference WHERE Conference_ID = conference_id;
+    ELSE
+        SELECT * FROM Conference;
+    END IF;
 END //
 
---Call the procedure to add a new player
---CALL add_new_player('John', 'Doe', '1990-01-01', 'New York', 1.80, 75.0, 'Forward', 1); -- Replace 1 with the actual Club_ID
+DELIMITER ;
 
+-- Procedure to update conference data
+DELIMITER //
 
--- Procedure to update a club's stats
-CREATE PROCEDURE update_club_stats(
-    IN p_club_stats_id INT,
-    IN p_club_id INT,
-    IN p_year INT,	
-    IN p_total_wins INT,
-    IN p_total_losses INT,
-    IN p_total_draws INT
+CREATE PROCEDURE update_conference(
+    IN p_conference_id INT,
+    IN p_new_conference_name VARCHAR(100)
 )
 BEGIN
-    UPDATE club_stats
-    SET Total_Wins = p_total_wins,
-        Total_Losses = p_total_losses,
-        Total_Draws = p_total_draws
-    WHERE Club_stats_ID = p_club_stats_id;
+    DECLARE v_conference_id INT;
+    
+    -- Assign the parameter to a local variable to ensure correct scoping
+    SET v_conference_id = p_conference_id;
+    
+    -- Only update the specific conference with the matching ID
+    UPDATE Conference
+    SET Conference_Name = p_new_conference_name
+    WHERE Conference_ID = v_conference_id;
 END //
 
---Call the procedure to update club stats       
---CALL update_club_stats(1, 1, 2024, 1, 1, 1); -- Replace 1 with the actual Club_stats_ID
+DELIMITER ;
+
+
+
+-- Procedure to delete conference data
+DELIMITER //
+
+CREATE PROCEDURE delete_conference(
+    IN p_conference_id INT
+)
+BEGIN
+    DECLARE club_count INT;
+
+    -- Check for related clubs
+    SELECT COUNT(*) INTO club_count
+    FROM Club
+    WHERE Conference_ID = p_conference_id;
+
+    -- Only delete if no related clubs exist
+    IF club_count = 0 THEN
+        DELETE FROM Conference
+        WHERE Conference_ID = p_conference_id;
+    ELSE
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Cannot delete this conference; related clubs exist.';
+    END IF;
+END //
+
+DELIMITER ;
+
+
+--Call the stored procedures for conference operations
+CALL create_conference('Test Conference');
+CALL read_conference(NULL);
+CALL update_conference(12, '1456415665');
+
+CALL delete_conference(12);
+
+-- End of Conference Stored Procedures
+
 
 ----------------------------------------
 -- Functions for data processing

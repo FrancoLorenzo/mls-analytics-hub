@@ -36,61 +36,61 @@ VALUES
 -- Clubs
 INSERT INTO Club (Club_ID, Conference_ID, Club_Name, Club_Name_Abbreviation, Club_Established_date, Club_badge)
 VALUES
-(1, 1, 'Red Falcons', 'RDF', '2010-04-16', 'badge_rdf.jpg'),
-(2, 1, 'Blue Thunder', 'BLT', '2008-07-12', 'badge_blt.jpg'),
-(3, 1, 'Golden Lions', 'GLS', '2011-10-25', 'badge_gls.jpg'),
-(4, 1, 'Silver Warriors', 'SWC', '2005-02-28', 'badge_swc.jpg'),
-(5, 1, 'Green Eagles', 'GRE', '2006-05-11', 'badge_gre.jpg'),
-(6, 1, 'Black Panthers', 'BLP', '2003-06-15', 'badge_blp.jpg'),
-(7, 2, 'White Stallions', 'WHS', '2002-08-21', 'badge_whs.jpg'),
-(8, 2, 'Crimson Sharks', 'CRS', '2007-11-12', 'badge_crs.jpg'),
-(9, 2, 'Yellow Bulls', 'YLB', '2009-12-15', 'badge_ylb.jpg'),
-(10, 2, 'Azure Wolves', 'AZW', '2006-06-17', 'badge_azw.jpg'),
-(11, 2, 'Emerald Hawks', 'EMH', '2004-07-14', 'badge_emh.jpg'),
-(12, 2, 'Bronze Bears', 'BRB', '1996-05-10', 'badge_brb.jpg'),
-(13, 2, 'Scarlet Foxes', 'SCF', '1998-06-18', 'badge_scf.jpg'),
-(14, 1, 'Iron Titans', 'IRT', '2010-08-26', 'badge_irt.jpg'),
-(15, 1, 'Amber Owls', 'AMB', '2000-05-23', 'badge_amb.jpg'),
-(16, NULL, 'Free Agent', NULL, NULL, NULL);
+(1, NULL, 'Free Agent', NULL, NULL, NULL),
+(2, 1, 'Red Falcons', 'RDF', '2010-04-16', 'badge_rdf.jpg'),
+(3, 1, 'Blue Thunder', 'BLT', '2008-07-12', 'badge_blt.jpg'),
+(4, 1, 'Golden Lions', 'GLS', '2011-10-25', 'badge_gls.jpg'),
+(5, 1, 'Silver Warriors', 'SWC', '2005-02-28', 'badge_swc.jpg'),
+(6, 1, 'Green Eagles', 'GRE', '2006-05-11', 'badge_gre.jpg'),
+(7, 1, 'Black Panthers', 'BLP', '2003-06-15', 'badge_blp.jpg'),
+(8, 2, 'White Stallions', 'WHS', '2002-08-21', 'badge_whs.jpg'),
+(9, 2, 'Crimson Sharks', 'CRS', '2007-11-12', 'badge_crs.jpg'),
+(10, 2, 'Yellow Bulls', 'YLB', '2009-12-15', 'badge_ylb.jpg'),
+(11, 2, 'Azure Wolves', 'AZW', '2006-06-17', 'badge_azw.jpg'),
+(12, 2, 'Emerald Hawks', 'EMH', '2004-07-14', 'badge_emh.jpg'),
+(13, 2, 'Bronze Bears', 'BRB', '1996-05-10', 'badge_brb.jpg'),
+(14, 2, 'Scarlet Foxes', 'SCF', '1998-06-18', 'badge_scf.jpg'),
+(15, 1, 'Iron Titans', 'IRT', '2010-08-26', 'badge_irt.jpg'),
+(16, 1, 'Amber Owls', 'AMB', '2000-05-23', 'badge_amb.jpg');
 
 
 -- Club Stats
-INSERT INTO Club_stats (Club_stats_ID, Club_ID, Year_ID, Total_Wins, Total_Losses, Total_Draws)
+INSERT INTO Club_stats (Club_stats_ID, Club_ID, Year_ID, Competition_ID, Total_Wins, Total_Losses, Total_Draws)
 VALUES
-(1, 1, 15, 18, 7, 9),
-(2, 2, 15, 16, 8, 10),
-(3, 3, 15, 15, 9, 10),
-(4, 4, 15, 19, 5, 10),
-(5, 5, 15, 17, 6, 11),
-(6, 6, 15, 13, 12, 9),
-(7, 7, 15, 20, 4, 10),
-(8, 8, 15, 18, 7, 9),
-(9, 9, 15, 14, 11, 9),
-(10, 10, 15, 16, 9, 9),
-(11, 11, 15, 15, 10, 9),
-(12, 12, 15, 13, 11, 10),
-(13, 13, 15, 14, 10, 10),
-(14, 14, 15, 17, 8, 9),
-(15, 15, 15, 18, 9, 7);
+(1, 1, 15, 1, 18, 7, 9),
+(2, 2, 15, 1, 16, 8, 10),
+(3, 3, 15, 1, 15, 9, 10),
+(4, 4, 15, 1, 19, 5, 10),
+(5, 5, 15, 1, 17, 6, 11),
+(6, 6, 15, 1, 13, 12, 9),
+(7, 7, 15, 1, 20, 4, 10),
+(8, 8, 15, 1, 18, 7, 9),
+(9, 9, 15, 1, 14, 11, 9),
+(10, 10, 15, 1, 16, 9, 9),
+(11, 11, 15, 1, 15, 10, 9),
+(12, 12, 15, 1, 13, 11, 10),
+(13, 13, 15, 1, 14, 10, 10),
+(14, 14, 15, 1, 17, 8, 9),
+(15, 15, 15, 1, 18, 9, 7);
 
 -- Standings
-INSERT INTO Standings (Standing_ID, Competition_ID, Club_stats_ID, Year_ID, Total_points)
+INSERT INTO Standings (Standing_ID, Club_stats_ID, Year_ID, Total_points)
 VALUES
-(1, 1, 1, 15, 0),
-(2, 1, 2, 15, 0),
-(3, 1, 3, 15, 0),
-(4, 1, 4, 15, 0),
-(5, 1, 5, 15, 0),
-(6, 1, 6, 15, 0),
-(7, 1, 7, 15, 0),
-(8, 1, 8, 15, 0),
-(9, 1, 9, 15, 0),
-(10, 1, 10, 15, 0),
-(11, 1, 11, 15, 0),
-(12, 1, 12, 15, 0),
-(13, 1, 13, 15, 0),
-(14, 1, 14, 15, 0),
-(15, 1, 15, 15, 0);
+(1, 1, 15, 0),
+(2, 2, 15, 0),
+(3, 3, 15, 0),
+(4, 4, 15, 0),
+(5, 5, 15, 0),
+(6, 6, 15, 0),
+(7, 7, 15, 0),
+(8, 8, 15, 0),
+(9, 9, 15, 0),
+(10, 10, 15, 0),
+(11, 11, 15, 0),
+(12, 12, 15, 0),
+(13, 13, 15, 0),
+(14, 14, 15, 0),
+(15, 15, 15, 0);
 
 -- Players
 INSERT INTO Player (Player_ID, Club_ID, Player_First_Name, Player_Last_Name, Birth_Date, Birthplace, Height, Weight, Position)
