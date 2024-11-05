@@ -6,6 +6,17 @@
     <h1>MLS Years</h1>
     <p>Here is the list of MLS years.</p>
 
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert alert-info" role="alert">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <!-- Years Table -->
     <table class="table table-striped mt-3">
         <thead>

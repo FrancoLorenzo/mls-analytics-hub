@@ -6,6 +6,17 @@
     <h1>MLS Players</h1>
     <p>Here is the list of MLS players.</p>
 
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert alert-info" role="alert">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <!--Clubs dropdown-->
     <table class="table table-striped mt-3">   
         <thead>
@@ -36,11 +47,11 @@
             <tr>
                 <th>First Name</th>
                 <th>Last Name</th>
-                <th>Birth date</th>
-                <th>Birth place</th>
-                <th>Height</th>
-                <th>Weight</th>
-                <th>Position</th>
+                <th class="text-center">Birth date</th>
+                <th class="text-center">Birth place</th>
+                <th class="text-center">Height</th>
+                <th class="text-center">Weight</th>
+                <th class="text-center">Position</th>
                 <th><a href="{{ url_for('main.add_player_page') }}" class="btn btn-primary mt-2" style="margin-left: 15px;">Add Player</a></th>
             </tr>
         </thead>
@@ -49,11 +60,11 @@
                 <tr>
                     <td>{{ player[2] }}</td>
                     <td>{{ player[3] }}</td>
-                    <td>{{ player[4] }}</td>
-                    <td>{{ player[5] }}</td>
-                    <td>{{ player[6] }}</td>
-                    <td>{{ player[7] }}</td>
-                    <td>{{ player[8] }}</td>
+                    <td class="text-center">{{ player[4] }}</td>
+                    <td class="text-center">{{ player[5] }}</td>
+                    <td class="text-center">{{ player[6] }}</td>
+                    <td class="text-center">{{ player[7] }}</td>
+                    <td class="text-center">{{ player[8] }}</td>
                     <td>
                         <a href="{{ url_for('main.edit_player', player_id=player[0]) }}" class="btn btn-primary mt-2">Edit</a>
                         <form action="{{ url_for('main.delete_player', player_id=player[0]) }}" method="POST" style="display:inline;">

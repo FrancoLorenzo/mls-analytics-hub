@@ -1,7 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from .db_connection import get_db_connection, delete_club  
-
-
+from .db_connection import get_db_connection  
 
 
 main = Blueprint('main', __name__)
@@ -9,11 +7,10 @@ main = Blueprint('main', __name__)
 @main.route('/')
 def index():
 
-    return render_template('index.html', clubs=clubs)
+    return render_template('index.html')
 
 
-# --------------------------------------------------------------------------------------------------------------------
-# Club route details
+#region Club routes
 # Club route
 @main.route('/clubs', methods=['GET', 'POST'])
 def clubs():
@@ -29,9 +26,9 @@ def clubs():
     
     # If conference_id is provided, filter clubs by the selected conference
     if conference_id and conference_id.isdigit():  # Make sure the ID is a valid number
-        cursor.execute("SELECT Club_ID, Club_Name, Club_Name_Abbreviation, Club_badge, Club_Established_Date FROM Club WHERE Conference_ID = ? AND Club_Name != 'Free Agent'", (conference_id,))
+        cursor.execute("SELECT Club_ID, Club_Name, Club_Name_Abbreviation, Club_badge, Club_Established_Date FROM Club WHERE Conference_ID = ? AND Club_Name != 'Free Agent' ORDER BY Club_Name", (conference_id,))
     else:
-        cursor.execute("SELECT Club_ID, Club_Name, Club_Name_Abbreviation, Club_badge, Club_Established_Date FROM Club WHERE Club_Name != 'Free Agent'")
+        cursor.execute("SELECT Club_ID, Club_Name, Club_Name_Abbreviation, Club_badge, Club_Established_Date FROM Club WHERE Club_Name != 'Free Agent' ORDER BY Club_Name")
     
     clubs = cursor.fetchall()
     
@@ -52,6 +49,7 @@ def add_club_page():
     connection.close()
     
     return render_template('club/add_club.html', conferences=conferences)
+
 
 # Create club route
 @main.route('/create_club', methods=['POST'])
@@ -75,6 +73,9 @@ def create_club():
     cursor.close()
     connection.close()
     
+    # Flash success message
+    flash("Club created successfully!", "success")
+
     return redirect(url_for('main.clubs'))
 
 
@@ -119,6 +120,9 @@ def update_club(club_id):
     connection.commit()
     cursor.close()
     connection.close()
+
+    # Flash success message
+    flash("Club updated successfully!", "success")
     
     return redirect(url_for('main.clubs'))
 
@@ -142,9 +146,9 @@ def delete_club(club_id):
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.clubs'))
 
+#endregion
 
-# --------------------------------------------------------------------------------------------------------------------
-# Year route details
+#region Year routes
 # Year route
 @main.route('/years', methods=['GET'])
 def years():
@@ -156,6 +160,7 @@ def years():
     connection.close()
     
     return render_template('years.html', years=years)
+
 
 # Add year route
 @main.route('/add_year', methods=['GET'])
@@ -188,6 +193,9 @@ def create_year():
     cursor.close()
     connection.close()
     
+    # Flash success message
+    flash("Year created successfully!", "success")
+
     return redirect(url_for('main.years'))
 
 
@@ -224,8 +232,10 @@ def update_year(year_id):
     cursor.close()
     connection.close()
     
-    return redirect(url_for('main.years'))
+    # Flash success message
+    flash("Year updated successfully!", "success")
 
+    return redirect(url_for('main.years'))
 
 
 # Delete year route
@@ -241,27 +251,27 @@ def delete_year(year_id):
                 connection.commit()
                 print(f"Club with ID {year_id} deleted successfully.")
             connection.close()
-        flash(" deleted successfully", "success")
+        flash("Year deleted successfully", "success")
     except Exception as e:
         flash(f"An error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.years'))
 
+#endregion
 
-
-# --------------------------------------------------------------------------------------------------------------------
-# Conference route details
+#region Conference routes
 # Conference route
 @main.route('/conferences', methods=['GET'])
 def conferences():
     # Connect to the database and fetch year information
     connection = get_db_connection()
     cursor = connection.cursor()
-    cursor.execute("SELECT Conference_ID, Conference_Name FROM Conference")  
+    cursor.execute("SELECT Conference_ID, Conference_Name FROM Conference ORDER BY Conference_Name")  
     conferences = cursor.fetchall()
     connection.close()
     
     return render_template('conferences.html', conferences=conferences)
+
 
 # Add conference route
 @main.route('/add_conference', methods=['GET'])
@@ -294,8 +304,10 @@ def create_conference():
     cursor.close()
     connection.close()
     
-    return redirect(url_for('main.conferences'))
+    # Flash success message
+    flash("Conference created successfully!", "success")
 
+    return redirect(url_for('main.conferences'))
 
 
 # Edit conference route
@@ -331,6 +343,9 @@ def update_conference(conference_id):
     cursor.close()
     connection.close()
     
+    # Flash success message
+    flash("Conference updated successfully!", "success")
+
     return redirect(url_for('main.conferences'))
 
 
@@ -347,17 +362,15 @@ def delete_conference(conference_id):
                 connection.commit()
                 print(f"Conference with ID {conference_id} deleted successfully.")
             connection.close()
-        flash(" deleted successfully", "success")
+        flash("Conference deleted successfully", "success")
     except Exception as e:
         flash(f"An error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.conferences'))
 
+#endregion
 
-
-
-# --------------------------------------------------------------------------------------------------------------------
-# Player route details
+#region Player routes
 # Player route
 @main.route('/players', methods=['GET'])
 def players():
@@ -396,6 +409,7 @@ def add_player_page():
     
     return render_template('player/add_player.html', clubs=clubs)
 
+
 # Create player route
 @main.route('/create_player', methods=['POST'])
 def create_player():
@@ -414,8 +428,10 @@ def create_player():
     cursor.close()
     connection.close()
     
-    return redirect(url_for('main.players'))
+    # Flash success message
+    flash("Player created successfully!", "success")
 
+    return redirect(url_for('main.players'))
 
 
 # Edit Player route
@@ -436,8 +452,6 @@ def edit_player(player_id):
     connection.close()
 
     return render_template('player/update_player.html', player=player, clubs=clubs)
-
-
 
 
 # Update player route
@@ -464,9 +478,10 @@ def update_player(player_id):
     cursor.close()
     connection.close()
     
+    # Flash success message
+    flash("Player updated successfully!", "success")
+
     return redirect(url_for('main.players'))
-
-
 
 
 # Delete player route
@@ -482,16 +497,15 @@ def delete_player(player_id):
                 connection.commit()
                 print(f"Player with ID {player_id} deleted successfully.")
             connection.close()
-        flash(" deleted successfully", "success")
+        flash("Player deleted successfully", "success")
     except Exception as e:
         flash(f"An error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.players'))
 
+#endregion
 
-
-# --------------------------------------------------------------------------------------------------------------------
-# Player stats route details
+#region Player Stats routes
 # Player stats route
 @main.route('/players_stats', methods=['GET'])
 def players_stats():
@@ -526,7 +540,6 @@ def players_stats():
     connection.close()
     
     return render_template('players_stats.html', players_stats=players_stats)
-
 
 
 # Add player stats route
@@ -581,6 +594,9 @@ def create_player_stat():
     cursor.close()
     connection.close()
     
+    # Flash success message
+    flash("Player stats created successfully!", "success")
+
     return redirect(url_for('main.players_stats'))
 
 
@@ -617,8 +633,6 @@ def edit_player_stat(player_stat_id):
     return render_template('player/update_player_stats.html', player_stat=player_stat, players=players, years=years)
 
 
-
-
 # Update player stat route
 @main.route('/player_stat/<int:player_stat_id>/update', methods=['POST'])
 def update_player_stat(player_stat_id):
@@ -653,9 +667,10 @@ def update_player_stat(player_stat_id):
     cursor.close()
     connection.close()
     
+    # Flash success message
+    flash("Player stats updated successfully!", "success")
+
     return redirect(url_for('main.players_stats'))
-
-
 
 
 # Delete player stat route
@@ -669,12 +684,14 @@ def delete_player_stat(player_stat_id):
     cursor.close()
     connection.close()
     
+    # Flash success message
+    flash("Player stats deleted successfully!", "success")
+
     return redirect(url_for('main.players_stats'))
 
+#endregion
 
-
-# --------------------------------------------------------------------------------------------------------------------
-# Club stats route details
+#region Club Stats routes
 # Clubs_stats route
 @main.route('/clubs_stats', methods=['GET'])
 def clubs_stats():
@@ -697,7 +714,6 @@ def clubs_stats():
     connection.close()
     
     return render_template('clubs_stats.html', clubs_stats=clubs_stats)
-
 
 
 # Add club stats route
@@ -738,8 +754,10 @@ def create_club_stats():
     cursor.close()
     connection.close()
     
-    return redirect(url_for('main.clubs_stats'))
+    # Flash success message
+    flash("Club stats created successfully!", "success")
 
+    return redirect(url_for('main.clubs_stats'))
 
 
 # Edit club stats route
@@ -775,7 +793,6 @@ def edit_club_stats(club_stats_id):
     return render_template('club/update_club_stats.html', club_stats=club_stats, clubs=clubs, years=years)
 
 
-
 # Update club stats route
 @main.route('/club_stats/<int:club_stats_id>/update', methods=['POST'])
 def update_club_stats(club_stats_id):
@@ -801,8 +818,10 @@ def update_club_stats(club_stats_id):
     cursor.close()
     connection.close()
 
-    return redirect(url_for('main.clubs_stats'))
+    # Flash success message
+    flash("Club stats updated successfully!", "success")
 
+    return redirect(url_for('main.clubs_stats'))
 
 
 # Delete club stats route
@@ -824,24 +843,20 @@ def delete_club_stats(club_stats_id):
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.clubs_stats'))
 
+#endregion
 
-
-
-
-# --------------------------------------------------------------------------------------------------------------------
-# Competition route details
+#region Competition routes
 # Competition route
 @main.route('/competitions', methods=['GET'])
 def competitions():
     # Connect to the database and fetch competition information
     connection = get_db_connection()
     cursor = connection.cursor()
-    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition")
+    cursor.execute("SELECT Competition_ID, Competition_Name FROM Competition ORDER BY Competition_Name")
     competitions = cursor.fetchall()
     connection.close()
     
     return render_template('competitions.html', competitions=competitions)
-
 
 
 # Add competition route
@@ -849,7 +864,6 @@ def competitions():
 def add_competition_page():
     # Render the form for adding a competition with Competition_ID and Competition_Name fields
     return render_template('competitions/add_competition.html')
-
 
 
 # Create competition route
@@ -869,8 +883,10 @@ def create_competition():
     cursor.close()
     connection.close()
     
-    return redirect(url_for('main.competitions'))
+    # Flash success message
+    flash("Competition created successfully!", "success")
 
+    return redirect(url_for('main.competitions'))
 
 
 # Edit competition route
@@ -887,7 +903,6 @@ def edit_competition(competition_id):
     connection.close()
 
     return render_template('competitions/update_competition.html', competition=competition)
-
 
 
 # Update competition route
@@ -907,8 +922,10 @@ def update_competition(competition_id):
     cursor.close()
     connection.close()
     
-    return redirect(url_for('main.competitions'))
+    # Flash success message
+    flash("Competition updated successfully!", "success")
 
+    return redirect(url_for('main.competitions'))
 
 
 # Delete competition route
@@ -930,12 +947,10 @@ def delete_competition(competition_id):
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.competitions'))
 
+#endregion
 
-
-
-# --------------------------------------------------------------------------------------------------------------------
-# Standings route details
-# Standings route with filters and additional columns
+#region Standings routes
+# Standings route with filters and additional columns, ordered by Total_points DESC
 @main.route('/standings', methods=['GET'])
 def standings():
     # Get filter parameters from query string
@@ -946,7 +961,7 @@ def standings():
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Build SQL query with optional filters
+    # Build SQL query with optional filters and order by Total_points in descending order
     query = """
         SELECT 
             s.Standing_ID, 
@@ -974,6 +989,9 @@ def standings():
             query += " WHERE s.Year_ID = ?"
         filters.append(year_id)
     
+    # Add the ORDER BY clause to sort by Total_points descending
+    query += " ORDER BY s.Total_points DESC"
+    
     cursor.execute(query, filters)
     standings = cursor.fetchall()
 
@@ -994,8 +1012,6 @@ def standings():
         selected_competition=competition_id,
         selected_year=year_id
     )
-
-
 
 
 # Add standing route
@@ -1020,8 +1036,6 @@ def add_standing_page():
     return render_template('standings/add_standing.html', competitions=competitions, club_stats=club_stats, years=years)
 
 
-
-
 # Create standing route
 @main.route('/create_standing', methods=['POST'])
 def create_standing():
@@ -1044,8 +1058,10 @@ def create_standing():
     cursor.close()
     connection.close()
     
-    return redirect(url_for('main.standings'))
+    # Flash success message
+    flash("Standing created successfully!", "success")
 
+    return redirect(url_for('main.standings'))
 
 
 # Edit standing route
@@ -1083,8 +1099,6 @@ def edit_standing(standing_id):
     return render_template('standings/update_standing.html', standing=standing, competitions=competitions, club_stats=club_stats, years=years)
 
 
-
-
 # Update standing route
 @main.route('/standing/<int:standing_id>/update', methods=['POST'])
 def update_standing(standing_id):
@@ -1092,7 +1106,6 @@ def update_standing(standing_id):
     competition_id = request.form['competition_id']
     club_stats_id = request.form['club_stats_id']
     year_id = request.form['year_id']
-    total_points = request.form['total_points']
 
     # Connect to the database and update the standing
     connection = get_db_connection()
@@ -1103,14 +1116,16 @@ def update_standing(standing_id):
         SET Competition_ID = ?, Club_stats_ID = ?, Year_ID = ?, Total_points = ?
         WHERE Standing_ID = ?
         """,
-        (competition_id, club_stats_id, year_id, total_points, standing_id)
+        (competition_id, club_stats_id, year_id, 0, standing_id)
     )
     connection.commit()
     cursor.close()
     connection.close()
-    
-    return redirect(url_for('main.standings'))
 
+    # Flash success message
+    flash("Standing updated successfully!", "success")    
+
+    return redirect(url_for('main.standings'))
 
 
 # Delete standing route
@@ -1131,3 +1146,5 @@ def delete_standing(standing_id):
         flash(f"An error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
     return redirect(url_for('main.standings'))
+
+#endregion

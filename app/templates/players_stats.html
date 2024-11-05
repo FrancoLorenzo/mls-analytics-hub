@@ -6,23 +6,34 @@
     <h1>Player Statistics</h1>
     <p>Here is the list of player statistics for the MLS.</p>
 
+    <!-- Flash Messages for Feedback -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert alert-info" role="alert">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <!-- Player Stats Table -->
     <table class="table table-striped mt-3">
         <thead>
             <tr>
                 <th>Player Name</th>
                 <th>Year</th>
-                <th>Goals</th>
-                <th>Passes</th>
-                <th>Passes Complete</th>
-                <th>Assists</th>
-                <th>Free Kicks</th>
-                <th>Corner Kicks</th>
-                <th>Fouls</th>
-                <th>Fouls Suffered</th>
-                <th>Offside</th>
-                <th>Yellow Cards</th>
-                <th>Red Cards</th>
+                <th class="text-center">Goals</th>
+                <th class="text-center">Passes</th>
+                <th class="text-center">Passes Complete</th>
+                <th class="text-center">Assists</th>
+                <th class="text-center">Free Kicks</th>
+                <th class="text-center">Corner Kicks</th>
+                <th class="text-center">Fouls</th>
+                <th class="text-center">Fouls Suffered</th>
+                <th class="text-center">Offside</th>
+                <th class="text-center">Yellow Cards</th>
+                <th class="text-center">Red Cards</th>
                 <th>
                     <a href="{{ url_for('main.add_player_stats') }}" class="btn btn-primary mt-2" style="margin-left: 15px;">Add Player Stat</a>
                 </th>
@@ -33,17 +44,17 @@
                 <tr>
                     <td>{{ stat[2] }}</td> <!-- Player_Name -->
                     <td>{{ stat[3] }}</td> <!-- Year -->
-                    <td>{{ stat[4] }}</td> <!-- Goals -->
-                    <td>{{ stat[5] }}</td> <!-- Passes -->
-                    <td>{{ stat[6] }}</td> <!-- Passes_complete -->
-                    <td>{{ stat[7] }}</td> <!-- Assists -->
-                    <td>{{ stat[8] }}</td> <!-- Free_kicks -->
-                    <td>{{ stat[9] }}</td> <!-- Corner_kicks -->
-                    <td>{{ stat[10] }}</td> <!-- Fouls -->
-                    <td>{{ stat[11] }}</td> <!-- Fouls_suffered -->
-                    <td>{{ stat[12] }}</td> <!-- Offside -->
-                    <td>{{ stat[13] }}</td> <!-- Yellow_cards -->
-                    <td>{{ stat[14] }}</td> <!-- Red_cards -->
+                    <td class="text-center">{{ stat[4] }}</td> <!-- Goals -->
+                    <td class="text-center">{{ stat[5] }}</td> <!-- Passes -->
+                    <td class="text-center">{{ stat[6] }}</td> <!-- Passes_complete -->
+                    <td class="text-center">{{ stat[7] }}</td> <!-- Assists -->
+                    <td class="text-center">{{ stat[8] }}</td> <!-- Free_kicks -->
+                    <td class="text-center">{{ stat[9] }}</td> <!-- Corner_kicks -->
+                    <td class="text-center">{{ stat[10] }}</td> <!-- Fouls -->
+                    <td class="text-center">{{ stat[11] }}</td> <!-- Fouls_suffered -->
+                    <td class="text-center">{{ stat[12] }}</td> <!-- Offside -->
+                    <td class="text-center">{{ stat[13] }}</td> <!-- Yellow_cards -->
+                    <td class="text-center">{{ stat[14] }}</td> <!-- Red_cards -->
                     <td>
                         <!-- Corrected Edit Link -->
                         <a href="{{ url_for('main.edit_player_stat', player_stat_id=stat[0]) }}" class="btn btn-primary mt-2">Edit</a>
