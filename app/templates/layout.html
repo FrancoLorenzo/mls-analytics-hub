@@ -6,6 +6,7 @@
     <title>{% block title %}MLS Analytics Hub{% endblock %}</title>
     <!-- Link to Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <style>
         /* Override dropdown menu text color and add hover effect */
@@ -26,7 +27,7 @@
     <div class="container d-flex justify-content-between align-items-center py-3">
         <div class="header-logo">
             <a href="{{ url_for('main.index') }}">
-                <img src="{{ url_for('static', filename='img/mls-analytics-hub-logo.png') }}" alt="MLS Logo" class="img-fluid" style="height: 40px;">
+                <img src="{{ url_for('static', filename='img/mls-analytics-hub-logo2.png') }}" alt="MLS Logo" class="img-fluid" style="height: 65px;">
             </a>
         </div>
         <nav>
@@ -63,7 +64,7 @@
         <div class="row">
             <div class="col-md-2">
                 <ul class="list-unstyled">
-                    <li><a href="#" class="text-white">Follow us</a></li>
+                    <li><a href="#" class="text-white">Follow us <i class="bi bi-facebook" style="margin-left: 10px;"></i><i class="bi bi-instagram" style="margin-left: 10px;"></i><i class="bi bi-linkedin" style="margin-left: 10px;"></i></a></li>                    
                 </ul>
             </div>
             <!-- Add more footer sections as needed -->

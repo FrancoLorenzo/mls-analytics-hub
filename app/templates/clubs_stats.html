@@ -6,6 +6,11 @@
     <h1>MLS Club Stats</h1>
     <p>Here is the list of club statistics.</p>
 
+    <!-- Banner Image -->
+    <div class="text-center mb-4">
+        <img src="{{ url_for('static', filename='img/Club-stats-banner.png') }}" alt="Competitions Banner" class="img-fluid" style="width: 100%; height: 300px;   max-width: 100%; border: 1px solid #ddd; padding: 10px;">
+    </div>
+
     <!-- Flash Messages for Feedback -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}

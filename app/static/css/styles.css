@@ -41,7 +41,8 @@ nav a:hover {
 /* Main content area */
 main {
     padding: 80px 20px; /* Adjusts top padding to avoid overlap with fixed header */
-    margin-bottom: 60px; /* Adjusts bottom margin to avoid overlap with fixed footer */
+    /* Remove or adjust the bottom margin if not needed */
+    margin-bottom: 20px; /* Adjusted to a smaller value */
 }
 
 /* Footer styles */

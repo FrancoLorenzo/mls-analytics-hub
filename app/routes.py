@@ -136,14 +136,24 @@ def delete_club(club_id):
         if connection:
             with connection.cursor() as cursor:
                 cursor.execute("DELETE FROM Club WHERE club_id = ?", (club_id,))
-                print(f"Delete executed for club ID {club_id}")  
+                print(f"Delete executed for club ID {club_id}")
                 connection.commit()
                 print(f"Club with ID {club_id} deleted successfully.")
-            connection.close()
-        flash("Club deleted successfully", "success")
+            flash("Club deleted successfully", "success")
+            
     except Exception as e:
-        flash(f"An error occurred: {str(e)}", "danger")
+        # Check if it's a foreign key constraint error (code 1451 in MySQL)
+        if '1451' in str(e):
+            flash("Error: This club cannot be deleted because it is linked to other records (e.g., players, stats).", "danger")
+        else:
+            # Generic error message for other exceptions
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
+    
+    finally:
+        if connection:
+            connection.close()
+
     return redirect(url_for('main.clubs'))
 
 #endregion
@@ -242,20 +252,31 @@ def update_year(year_id):
 @main.route('/delete_year/<int:year_id>', methods=['POST'])
 def delete_year(year_id):
     try:
-        print(f"Attempting to delete club with ID: {year_id}")
+        print(f"Attempting to delete year with ID: {year_id}")
         connection = get_db_connection()
         if connection:
             with connection.cursor() as cursor:
                 cursor.execute("DELETE FROM Year WHERE year_id = ?", (year_id,))
                 print(f"Delete executed for Year ID {year_id}")
                 connection.commit()
-                print(f"Club with ID {year_id} deleted successfully.")
-            connection.close()
-        flash("Year deleted successfully", "success")
+                print(f"Year with ID {year_id} deleted successfully.")
+            flash("Year deleted successfully", "success")
+            
     except Exception as e:
-        flash(f"An error occurred: {str(e)}", "danger")
+        # Check if it's a foreign key constraint error (code 1451 in MySQL)
+        if '1451' in str(e):
+            flash("Error: This year cannot be deleted because it is linked to other records (e.g., player stats, club stats).", "danger")
+        else:
+            # Generic error message for other exceptions
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
+    
+    finally:
+        if connection:
+            connection.close()
+
     return redirect(url_for('main.years'))
+
 
 #endregion
 
@@ -361,12 +382,24 @@ def delete_conference(conference_id):
                 print(f"Delete executed for Conference ID {conference_id}")
                 connection.commit()
                 print(f"Conference with ID {conference_id} deleted successfully.")
-            connection.close()
-        flash("Conference deleted successfully", "success")
+            flash("Conference deleted successfully", "success")
+            
     except Exception as e:
-        flash(f"An error occurred: {str(e)}", "danger")
+        # Check if it's a foreign key constraint error (code 1451 in MySQL)
+        if '1451' in str(e):
+            flash("Error: This conference cannot be deleted because it is linked to other records (e.g., clubs).", "danger")
+        else:
+            # Generic error message for other exceptions
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
+    
+    finally:
+        if connection:
+            connection.close()
+
     return redirect(url_for('main.conferences'))
+
+
 
 #endregion
 
@@ -496,12 +529,23 @@ def delete_player(player_id):
                 print(f"Delete executed for Player ID {player_id}")
                 connection.commit()
                 print(f"Player with ID {player_id} deleted successfully.")
-            connection.close()
-        flash("Player deleted successfully", "success")
+            flash("Player deleted successfully", "success")
+            
     except Exception as e:
-        flash(f"An error occurred: {str(e)}", "danger")
+        # Check if it's a foreign key constraint error (code 1451 in MySQL)
+        if '1451' in str(e):
+            flash("Error: This player cannot be deleted because it is linked to other records (e.g., clubs).", "danger")
+        else:
+            # Generic error message for other exceptions
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
+    
+    finally:
+        if connection:
+            connection.close()
+
     return redirect(url_for('main.players'))
+
 
 #endregion
 
@@ -700,18 +744,32 @@ def update_player_stat(player_stat_id):
 # Delete player stat route
 @main.route('/player_stat/<int:player_stat_id>/delete', methods=['POST'])
 def delete_player_stat(player_stat_id):
-    # Connect to the database and delete the player stat
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    cursor.execute("DELETE FROM Player_Stats WHERE Player_stats_ID = ?", (player_stat_id,))
-    connection.commit()
-    cursor.close()
-    connection.close()
+    try:
+        print(f"Attempting to delete player stat with ID: {player_stat_id}")
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM Player_Stats WHERE Player_stats_ID = ?", (player_stat_id,))
+                print(f"Delete executed for Player Stat ID {player_stat_id}")
+                connection.commit()
+                print(f"Player stat with ID {player_stat_id} deleted successfully.")
+            flash("Player stats deleted successfully!", "success")
+        
+    except Exception as e:
+        # Check if it's a foreign key constraint error (code 1451 in MySQL)
+        if '1451' in str(e):
+            flash("Error: This player stat cannot be deleted because it is linked to other records.", "danger")
+        else:
+            # Generic error message for other exceptions
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
+        print(f"Error during deletion: {e}")
     
-    # Flash success message
-    flash("Player stats deleted successfully!", "success")
+    finally:
+        if connection:
+            connection.close()
 
     return redirect(url_for('main.players_stats'))
+
 
 #endregion
 
@@ -747,7 +805,7 @@ def clubs_stats():
 def add_club_stats_page():
     connection = get_db_connection()
     cursor = connection.cursor()
-    cursor.execute("SELECT Club_ID, Club_Name FROM Club")  # Fetch available clubs
+    cursor.execute("SELECT Club_ID, Club_Name FROM Club WHERE Club_Name != 'Free Agent'")  # Fetch available clubs
     clubs = cursor.fetchall()
     
     cursor.execute("SELECT Year_ID, Year FROM Year")  # Fetch available years
@@ -813,7 +871,7 @@ def edit_club_stats(club_stats_id):
     club_stats = cursor.fetchone()
 
     # Fetch available clubs, years, and competitions for dropdowns
-    cursor.execute("SELECT Club_ID, Club_Name FROM Club")
+    cursor.execute("SELECT Club_ID, Club_Name FROM Club WHERE Club_Name != 'Free Agent'")
     clubs = cursor.fetchall()
     
     cursor.execute("SELECT Year_ID, Year FROM Year")
@@ -873,12 +931,23 @@ def delete_club_stats(club_stats_id):
                 print(f"Delete executed for Club Stats ID {club_stats_id}")
                 connection.commit()
                 print(f"Club stats with ID {club_stats_id} deleted successfully.")
-            connection.close()
-        flash("Club stats deleted successfully", "success")
+            flash("Club stats deleted successfully", "success")
+        
     except Exception as e:
-        flash(f"An error occurred: {str(e)}", "danger")
+        # Check if it's a foreign key constraint error (code 1451 in MySQL)
+        if '1451' in str(e):
+            flash("Error: This club stats record cannot be deleted because it is linked to other records (e.g., standings).", "danger")
+        else:
+            # Generic error message for other exceptions
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
+    
+    finally:
+        if connection:
+            connection.close()
+
     return redirect(url_for('main.clubs_stats'))
+
 
 #endregion
 
@@ -977,12 +1046,23 @@ def delete_competition(competition_id):
                 print(f"Delete executed for Competition ID {competition_id}")
                 connection.commit()
                 print(f"Competition with ID {competition_id} deleted successfully.")
-            connection.close()
-        flash("Competition deleted successfully", "success")
+            flash("Competition deleted successfully", "success")
+            
     except Exception as e:
-        flash(f"An error occurred: {str(e)}", "danger")
+        # Check if it's a foreign key constraint error (code 1451 in MySQL)
+        if '1451' in str(e):
+            flash("Error: This competition cannot be deleted because it is linked to other records.", "danger")
+        else:
+            # Generic error message for other exceptions
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
+    
+    finally:
+        if connection:
+            connection.close()
+
     return redirect(url_for('main.competitions'))
+
 
 #endregion
 
@@ -1238,11 +1318,23 @@ def delete_standing(standing_id):
                 print(f"Delete executed for Standing ID {standing_id}")
                 connection.commit()
                 print(f"Standing with ID {standing_id} deleted successfully.")
-            connection.close()
-        flash("Standing deleted successfully", "success")
+            flash("Standing deleted successfully", "success")
+        
     except Exception as e:
-        flash(f"An error occurred: {str(e)}", "danger")
+        # Check if it's a foreign key constraint error (code 1451 in MySQL)
+        if '1451' in str(e):
+            flash("Error: This standing cannot be deleted because it is linked to other records (e.g., club stats).", "danger")
+        else:
+            # Generic error message for other exceptions
+            flash(f"An unexpected error occurred: {str(e)}", "danger")
         print(f"Error during deletion: {e}")
+    
+    finally:
+        if connection:
+            connection.close()
+
     return redirect(url_for('main.standings'))
+
+
 
 #endregion
