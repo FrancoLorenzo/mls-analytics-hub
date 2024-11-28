@@ -84,3 +84,37 @@ footer {
     width: 100%;
 }
 
+
+/* SQL Complex queries UI*/
+.options-panel {
+    width: 30%;
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+.option-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.option-row form {
+    margin-right: 10px;
+}
+.option-row button {
+    width: 150px;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #0078D7;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #0078D7;
+    cursor: pointer;
+    text-align: center;
+}
+.option-row button:hover {
+    background-color: #0078D7;
+    color: #fff;
+}
+.option-description {
+    font-size: 14px;
+    color: #333;
+}

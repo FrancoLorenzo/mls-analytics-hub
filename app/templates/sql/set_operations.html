@@ -1,0 +1,211 @@
+{% extends "layout.html" %}
+
+{% block title %}Home - MLS Analytics Hub{% endblock %}
+
+{% block content %}
+    
+<style>
+    .options-panel {
+        width: 100%;
+        background-color: #f4f4f4;
+        padding: 20px;
+    }
+    .option-row {
+        display: flex;
+        align-items: center;
+    }
+    .option-row button {
+        flex-shrink: 0;
+        width: 150px; /* Set a fixed width */
+        margin-right: 10px;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #0078D7;
+        border-radius: 4px;
+        background-color: #fff;
+        color: #0078D7;
+        cursor: pointer;
+        text-align: center;
+    }
+    .option-row button:hover {
+        background-color: #0078D7;
+        color: #fff;
+    }
+    .viewer-panel {
+        display: flex;
+        width: 100%;
+    }
+    .query-code {
+        width: 70%;
+        padding: 20px;
+        border-right: 1px solid #ddd;
+        background-color: #fafafa;
+    }
+    .query-code pre {
+        background: #333;
+        color: #fff;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+    }
+    .query-result {
+        width: 40%;
+        padding: 20px;
+    }
+</style>
+
+    <br>
+    <br>
+    <h1>Set operations</h1>
+    <p>Explore various SQL operations that power the MLS Analytics Hub. Select an option from the list to view the corresponding query and its output.</p>
+    <div class="container">
+        <!-- Options Panel -->
+        <div class="options-panel">
+            <div class="option-row">
+                <button onclick="showQuery('query1')">Query 1</button>
+                List the top 5 goal scorers from each club using set operations.
+            </div>
+            <div class="option-row">
+                <button onclick="showQuery('query2')">Query 2</button>
+                List players born after January 1, 1995 using set membership.
+            </div>
+            <div class="option-row">
+                <button onclick="showQuery('query3')">Query 3</button>
+                List the top 10 players with the highest total goals historically using set comparison.
+            </div>
+        </div>
+
+        <!-- Viewer Panel -->
+        <div class="viewer-panel">
+            <!-- Query Code Section -->
+            <div class="query-code" id="query-code">
+                <h3>Query Code</h3>
+                <pre id="code-display"></pre>
+            </div>
+
+            <!-- Query Result Section -->
+            <div class="query-result" id="query-result">
+                <h3>Query Result</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript to handle query code and result updates
+        const queries = {
+            query1: {
+                code: 
+`SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
+FROM (
+    SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
+           ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals DESC) 
+           AS player_rank
+    FROM Player p
+    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+) AS ranked_players
+WHERE player_rank <= 5 -- Top 5 players in each club
+UNION
+SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
+FROM (
+    SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
+           ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals ASC) 
+           AS player_rank
+    FROM Player p
+    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+) AS ranked_players
+WHERE player_rank <= 5
+Limit 10;`,
+                result: `<table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Club</th>
+                            <th>Goals</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for operation in set_operations %}
+                            <tr>
+                                <td>{{ operation[0] }}</td>
+                                <td>{{ operation[1] }}</td>
+                                <td>{{ operation[2] }}</td>
+                                <td>{{ operation[3] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>`
+            },
+            query2: {
+                code: 
+`SELECT Player_First_Name, Player_Last_Name, Birth_Date
+FROM Player
+WHERE Player_ID IN (
+    SELECT Player_ID
+    FROM Player_stats
+)
+AND Birth_Date > '1995-01-01'
+ORDER BY Birth_Date DESC
+LIMIT 10;`,
+                result: `<table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Birt date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in set_membership %}
+                            <tr>
+                                <td>{{ member[0] }}</td>
+                                <td>{{ member[1] }}</td>
+                                <td>{{ member[2] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>`
+            },
+            query3: {
+                code: 
+`SELECT p.Player_First_Name, p.Player_Last_Name, TopGoals.total_goals
+FROM (
+    SELECT Player_ID, SUM(Goals) AS total_goals
+    FROM Player_stats
+    GROUP BY Player_ID
+    ORDER BY total_goals DESC
+    LIMIT 10
+) AS TopGoals
+JOIN Player p ON p.Player_ID = TopGoals.Player_ID
+ORDER BY TopGoals.total_goals DESC;`,
+                result: `<table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Goals</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comparison in set_comparison %}
+                            <tr>
+                                <td>{{ comparison[0] }}</td>
+                                <td>{{ comparison[1] }}</td>
+                                <td>{{ comparison[2] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>`
+            }
+        };
+
+        function showQuery(queryKey) {
+            const query = queries[queryKey];
+            document.getElementById('code-display').innerText = query.code;
+            document.getElementById('query-result').innerHTML = `<h3>Query Result</h3><pre>${query.result}</pre>`;
+        }
+    </script>
+
+{% endblock %}

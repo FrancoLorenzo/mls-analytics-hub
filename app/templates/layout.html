@@ -48,6 +48,16 @@
                     </div>
                 </li>
                 <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('main.standings') }}">Standings</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link text-white dropdown-toggle" href="#" id="statsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        SQL
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="statsDropdown">
+                        <a class="dropdown-item" href="{{ url_for('main.set_operations') }}">Set operations</a>
+                        <a class="dropdown-item" href="{{ url_for('main.subqueries_using_with') }}">Subqueries using WITH</a>
+                        <a class="dropdown-item" href="{{ url_for('main.olap_queries') }}">OLAP queries</a>
+                    </div>
+                </li>
             </ul>
         </nav>
     </div>

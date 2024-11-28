@@ -1,0 +1,224 @@
+{% extends "layout.html" %}
+
+{% block title %}Home - MLS Analytics Hub{% endblock %}
+
+{% block content %}
+    
+<style>
+    .options-panel {
+        width: 100%;
+        background-color: #f4f4f4;
+        padding: 20px;
+    }
+    .option-row {
+        display: flex;
+        align-items: center;
+    }
+    .option-row button {
+        flex-shrink: 0;
+        width: 150px; /* Set a fixed width */
+        margin-right: 10px;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #0078D7;
+        border-radius: 4px;
+        background-color: #fff;
+        color: #0078D7;
+        cursor: pointer;
+        text-align: center;
+    }
+    .option-row button:hover {
+        background-color: #0078D7;
+        color: #fff;
+    }
+    .viewer-panel {
+        display: flex;
+        width: 100%;
+    }
+    .query-code {
+        width: 55%;
+        padding: 20px;
+        border-right: 1px solid #ddd;
+        background-color: #fafafa;
+    }
+    .query-code pre {
+        background: #333;
+        color: #fff;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+    }
+    .query-result {
+        width: 48%;
+        padding: 20px;
+    }
+</style>
+
+    <br>
+    <br>
+    <h1>Subqueries using the WITH clause</h1>
+    <p>Explore various SQL operations that power the MLS Analytics Hub. Select an option from the list to view the corresponding query and its output.</p>
+    <div class="container">
+        <!-- Options Panel -->
+        <div class="options-panel">
+            <div class="option-row">
+                <button onclick="showQuery('query1')">Query 1</button>
+                UPDATE THIS TEXT.
+            </div>
+            <div class="option-row">
+                <button onclick="showQuery('query2')">Query 2</button>
+                UPDATE THIS TEXT.
+            </div>
+            <div class="option-row">
+                <button onclick="showQuery('query3')">Query 3</button>
+                UPDATE THIS TEXT.
+            </div>
+        </div>
+
+        <!-- Viewer Panel -->
+        <div class="viewer-panel">
+            <!-- Query Code Section -->
+            <div class="query-code" id="query-code">
+                <h3>Query Code</h3>
+                <pre id="code-display"></pre>
+            </div>
+
+            <!-- Query Result Section -->
+            <div class="query-result" id="query-result">
+                <h3>Query Result</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript to handle query code and result updates
+        const queries = {
+            query1: {
+                code: 
+`WITH ClubTotalGoals AS (
+    -- Calculate total goals for each club
+    SELECT c.Club_ID, c.Club_Name, SUM(ps.Goals) AS club_total_goals
+    FROM Player_stats ps
+    JOIN Player p ON ps.Player_ID = p.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+    GROUP BY c.Club_ID, c.Club_Name
+),
+PlayerContributions AS (
+    -- Calculate each player's goals and their club details
+    SELECT p.Player_ID, p.Player_First_Name, p.Player_Last_Name, 
+           ps.Goals, c.Club_ID, c.Club_Name
+    FROM Player_stats ps
+    JOIN Player p ON ps.Player_ID = p.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+)
+-- Main query to combine player contributions with club totals
+SELECT pc.Player_First_Name, pc.Player_Last_Name, pc.Goals, 
+       pc.Club_Name, ctg.club_total_goals,
+       ROUND((pc.Goals / ctg.club_total_goals) * 100, 2) 
+       AS contribution_percentage
+FROM PlayerContributions pc
+JOIN ClubTotalGoals ctg ON pc.Club_ID = ctg.Club_ID
+WHERE ctg.club_total_goals > 0  -- Ensures no division by zero
+ORDER BY pc.Club_Name, contribution_percentage DESC;`,
+                result: `<table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Goals</th>
+                            <th>Club</th>
+                            <th>Contribution %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for percentage in player_contributions %}
+                            <tr>
+                                <td>{{ percentage[0] }} {{ percentage[1] }}</td>
+                                <td>{{ percentage[2] }}</td>
+                                <td>{{ percentage[3] }}</td>
+                                <td>{{ percentage[5] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>`
+            },
+            query2: {
+                code: 
+`WITH RankedPlayers AS (
+    SELECT p.Player_First_Name, p.Player_Last_Name, ps.Assists,
+           DENSE_RANK() OVER(ORDER BY ps.Assists DESC) AS assist_rank
+    FROM Player_stats ps
+    JOIN Player p ON ps.Player_ID = p.Player_ID
+)
+SELECT Player_First_Name, Player_Last_Name, Assists, assist_rank
+FROM RankedPlayers
+ORDER BY assist_rank, Assists DESC;`,
+                result: `<table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Assists</th>
+                            <th>Assist rank</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rank in ranking %}
+                            <tr>
+                                <td>{{ rank[0] }} {{ rank[1] }}</td>
+                                <td>{{ rank[2] }}</td>
+                                <td>{{ rank[3] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>`
+            },
+            query3: {
+                code: 
+`WITH YearFilter AS (
+    -- Get the specific Year_ID for the year 2024
+    SELECT Year_ID
+    FROM Year
+    WHERE Year = 2024
+),
+ClubCards AS (
+    -- Calculate yellow and red cards per club for the specific year
+    SELECT c.Club_Name, 
+           SUM(ps.Yellow_cards) AS yellow_cards,
+           SUM(ps.Red_cards) AS red_cards
+    FROM Player_stats ps
+    JOIN Player p ON ps.Player_ID = p.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+    WHERE ps.Year_ID = (SELECT Year_ID FROM YearFilter)
+    GROUP BY c.Club_Name
+)
+SELECT Club_Name, yellow_cards, red_cards
+FROM ClubCards
+ORDER BY yellow_cards DESC, red_cards DESC;`,
+                result: `<table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Club</th>
+                            <th>Yellow cards</th>
+                            <th>Red cards</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for card in cards %}
+                            <tr>
+                                <td>{{ card[0] }}</td>
+                                <td>{{ card[1] }}</td>
+                                <td>{{ card[2] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>`
+            }
+        };
+
+        function showQuery(queryKey) {
+            const query = queries[queryKey];
+            document.getElementById('code-display').innerText = query.code;
+            document.getElementById('query-result').innerHTML = `<h3>Query Result</h3><pre>${query.result}</pre>`;
+        }
+    </script>
+
+{% endblock %}

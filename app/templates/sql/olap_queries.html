@@ -1,0 +1,219 @@
+{% extends "layout.html" %}
+
+{% block title %}Home - MLS Analytics Hub{% endblock %}
+
+{% block content %}
+    
+<style>
+    .options-panel {
+        width: 100%;
+        background-color: #f4f4f4;
+        padding: 20px;
+    }
+    .option-row {
+        display: flex;
+        align-items: center;
+    }
+    .option-row button {
+        flex-shrink: 0;
+        width: 150px; /* Set a fixed width */
+        margin-right: 10px;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #0078D7;
+        border-radius: 4px;
+        background-color: #fff;
+        color: #0078D7;
+        cursor: pointer;
+        text-align: center;
+    }
+    .option-row button:hover {
+        background-color: #0078D7;
+        color: #fff;
+    }
+    .viewer-panel {
+        display: flex;
+        width: 100%;
+    }
+    .query-code {
+        width: 50%;
+        padding: 20px;
+        border-right: 1px solid #ddd;
+        background-color: #fafafa;
+    }
+    .query-code pre {
+        background: #333;
+        color: #fff;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+    }
+    .query-result {
+        width: 50%;
+        padding: 20px;
+    }
+</style>
+
+    <br>
+    <br>
+    <h1>OLAP queries</h1>
+    <p>Explore various SQL operations that power the MLS Analytics Hub. Select an option from the list to view the corresponding query and its output.</p>
+    <div class="container">
+        <!-- Options Panel -->
+        <div class="options-panel">
+            <div class="option-row">
+                <button onclick="showQuery('query1')">Query 1</button>
+                UPDATE THIS TEXT.
+            </div>
+            <div class="option-row">
+                <button onclick="showQuery('query2')">Query 2</button>
+                UPDATE THIS TEXT.
+            </div>
+            <div class="option-row">
+                <button onclick="showQuery('query3')">Query 3</button>
+                UPDATE THIS TEXT.
+            </div>
+        </div>
+
+        <!-- Viewer Panel -->
+        <div class="viewer-panel">
+            <!-- Query Code Section -->
+            <div class="query-code" id="query-code">
+                <h3>Query Code</h3>
+                <pre id="code-display"></pre>
+            </div>
+
+            <!-- Query Result Section -->
+            <div class="query-result" id="query-result">
+                <h3>Query Result</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript to handle query code and result updates
+        const queries = {
+            query1: {
+                code: 
+`SELECT c.Club_Name, p.Position, 
+       AVG(ps.Goals) AS avg_goals,
+       AVG(ps.Assists) AS avg_assists,
+       AVG(ps.Yellow_cards) AS avg_yellow_cards,
+       AVG(ps.Red_cards) AS avg_red_cards
+FROM Player_stats ps
+JOIN Player p ON ps.Player_ID = p.Player_ID
+JOIN Club c ON p.Club_ID = c.Club_ID
+GROUP BY c.Club_Name, p.Position
+ORDER BY c.Club_Name, avg_goals DESC;`,
+                result: `<table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Club</th>
+                            <th>Position</th>
+                            <th>AVG goals</th>
+                            <th>AVG assists</th>
+                            <th>AVG yellow cards</th>
+                            <th>AVG red cards</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for club_record in club_performance %}
+                            <tr>
+                                <td>{{ club_record[0] }}</td>
+                                <td>{{ club_record[1] }}</td>
+                                <td>{{ club_record[2] }}</td>
+                                <td>{{ club_record[3] }}</td>
+                                <td>{{ club_record[4] }}</td>
+                                <td>{{ club_record[5] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>`
+            },
+            query2: {
+                code: 
+`WITH ClubGoals AS (
+    SELECT c.Club_Name, SUM(ps.Goals) AS total_goals
+    FROM Player_stats ps
+    JOIN Player p ON ps.Player_ID = p.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+    GROUP BY c.Club_Name
+),
+TotalGoals AS (
+    SELECT SUM(total_goals) AS overall_total_goals
+    FROM ClubGoals
+)
+SELECT cg.Club_Name, 
+       cg.total_goals,
+       ROUND((cg.total_goals * 100.0) / 
+       tg.overall_total_goals, 2) 
+       AS goal_percentage
+FROM ClubGoals cg
+CROSS JOIN TotalGoals tg
+ORDER BY goal_percentage DESC;`,
+                result: `<table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Club</th>
+                            <th>Total goals</th>
+                            <th>Goal %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for percentage in goal_percentage %}
+                            <tr>
+                                <td>{{ percentage[0] }}</td>
+                                <td>{{ percentage[1] }}</td>
+                                <td>{{ percentage[2] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>`
+            },
+            query3: {
+                code: 
+`SELECT Player_First_Name, Player_Last_Name, Position, 
+total_goals
+FROM (
+    SELECT p.Player_First_Name, p.Player_Last_Name, p.Position, 
+        SUM(ps.Goals) AS total_goals, ROW_NUMBER() 
+        OVER(PARTITION BY p.Position ORDER BY SUM(ps.Goals) 
+        DESC) 
+        AS position_rank
+    FROM Player p
+    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+    JOIN Year y ON ps.Year_ID = y.Year_ID
+    WHERE ps.Passes > 20 AND y.Year = 2024
+    GROUP BY p.Position, p.Player_ID
+) AS ranked_players
+WHERE position_rank <= 3
+ORDER BY Position, total_goals DESC;`,
+                result: `<table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Position</th>
+                            <th>Total goals</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for top_player in top_three_players_per_position %}
+                            <tr>
+                                <td>{{ top_player[0] }} {{ top_player[1] }}</td>
+                                <td>{{ top_player[2] }}</td>
+                                <td>{{ top_player[3] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>`
+            }
+        };
+
+        function showQuery(queryKey) {
+            const query = queries[queryKey];
+            document.getElementById('code-display').innerText = query.code;
+            document.getElementById('query-result').innerHTML = `<h3>Query Result</h3><pre>${query.result}</pre>`;
+        }
+    </script>
+
+{% endblock %}

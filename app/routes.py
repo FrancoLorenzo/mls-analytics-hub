@@ -1338,3 +1338,290 @@ def delete_standing(standing_id):
 
 
 #endregion
+
+# @main.route('/set_operations', methods=['GET'])
+# def set_operations():
+#     return render_template('sql/set_operations.html')
+
+
+
+# @main.route('/set_operations', methods=['GET', 'POST'])
+# def set_operations():
+#     if request.method == 'POST':
+#         # Retrieve the number from the form data
+#         query = request.form.get('query_option')
+
+#         # Handle cases based on the value of `query`
+#         if query == '1':
+#             print("Hi")
+#             # Connect to the database and fetch set operations information
+#             connection = get_db_connection()
+#             cursor = connection.cursor()
+
+#             # Execute the SQL query to fetch top and bottom 5 players by goals for each club
+#             cursor.execute("""
+#                 SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
+#                 FROM (
+#                     SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
+#                            ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals DESC) AS player_rank
+#                     FROM Player p
+#                     JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+#                     JOIN Club c ON p.Club_ID = c.Club_ID
+#                 ) AS ranked_players
+#                 WHERE player_rank <= 5 -- Top 5 players in each club
+#                 UNION
+#                 SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
+#                 FROM (
+#                     SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
+#                            ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals ASC) AS player_rank
+#                     FROM Player p
+#                     JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+#                     JOIN Club c ON p.Club_ID = c.Club_ID
+#                 ) AS ranked_players
+#                 WHERE player_rank <= 5;
+#             """)
+#             set_operations = cursor.fetchall()
+#         elif query == '2':
+#             print("Yes")
+#         elif query == '3':
+#             print("NO")
+#         else:
+#             print("Invalid option")
+
+
+                    
+#         # Provide feedback to the user (optional)
+#         flash(f"Number {query} was sent to the server.", "info")
+    
+#     return render_template('sql/set_operations.html')
+
+
+
+@main.route('/set_operations', methods=['GET'])
+def set_operations():
+    # Connect to the database
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Query 1: Top and bottom 5 players by goals for each club
+    cursor.execute("""
+        SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
+        FROM (
+            SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
+                    ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals DESC) AS player_rank
+            FROM Player p
+            JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+        ) AS ranked_players
+        WHERE player_rank <= 5 -- Top 5 players in each club
+        UNION
+        SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
+        FROM (
+            SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
+                    ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals ASC) AS player_rank
+            FROM Player p
+            JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+        ) AS ranked_players
+        WHERE player_rank <= 5
+        LIMIT 10;
+    """)
+    set_operations = cursor.fetchall()
+
+    # Query 2: Players born after January 1, 1995, with recorded stats
+    cursor.execute("""
+        SELECT Player_First_Name, Player_Last_Name, Birth_Date
+        FROM Player
+        WHERE Player_ID IN (
+            SELECT Player_ID
+            FROM Player_stats
+        )
+        AND Birth_Date > '1995-01-01'
+        ORDER BY Birth_Date DESC
+        LIMIT 10;
+    """)
+    set_membership = cursor.fetchall()
+
+    # Query 3: Top 10 players with the highest total goals
+    cursor.execute("""
+        SELECT p.Player_First_Name, p.Player_Last_Name, SUM(ps.Goals) AS total_goals
+        FROM Player p
+        JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+        GROUP BY p.Player_First_Name, p.Player_Last_Name
+        ORDER BY total_goals DESC
+        LIMIT 10;
+    """)
+    set_comparison = cursor.fetchall()
+
+    # Close the database connection
+    connection.close()
+
+    # Pass the results to the template
+    return render_template(
+        'sql/set_operations.html',
+        set_operations=set_operations,
+        set_membership=set_membership,
+        set_comparison=set_comparison
+    )
+
+
+
+
+
+@main.route('/subqueries_using_with', methods=['GET'])
+def subqueries_using_with():
+    # Connect to the database
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Query 1: Top and bottom 5 players by goals for each club UPDATE THIS!!!!
+    cursor.execute("""
+        WITH ClubTotalGoals AS (
+            -- Calculate total goals for each club
+            SELECT c.Club_ID, c.Club_Name, SUM(ps.Goals) AS club_total_goals
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+            GROUP BY c.Club_ID, c.Club_Name
+        ),
+        PlayerContributions AS (
+            -- Calculate each player's goals and their club details
+            SELECT p.Player_ID, p.Player_First_Name, p.Player_Last_Name, ps.Goals, 
+                c.Club_ID, c.Club_Name
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+        )
+        -- Main query to combine player contributions with club totals
+        SELECT pc.Player_First_Name, pc.Player_Last_Name, pc.Goals, 
+            pc.Club_Name, ctg.club_total_goals,
+            ROUND((pc.Goals / ctg.club_total_goals) * 100, 2) AS contribution_percentage
+        FROM PlayerContributions pc
+        JOIN ClubTotalGoals ctg ON pc.Club_ID = ctg.Club_ID
+        WHERE ctg.club_total_goals > 0  -- Ensures no division by zero
+        ORDER BY pc.Club_Name, contribution_percentage DESC;
+    """)
+    player_contributions = cursor.fetchall()
+
+    # Query 2: UPDATE THIS TEXT!!!
+    cursor.execute("""
+        WITH RankedPlayers AS (
+            SELECT p.Player_First_Name, p.Player_Last_Name, ps.Assists,
+                DENSE_RANK() OVER(ORDER BY ps.Assists DESC) AS assist_rank
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
+        )
+        SELECT Player_First_Name, Player_Last_Name, Assists, assist_rank
+        FROM RankedPlayers
+        ORDER BY assist_rank, Assists DESC;
+    """)
+    ranking = cursor.fetchall()
+
+    # Query 3: UPDATE THIS TEXT!!!
+    cursor.execute("""
+        WITH YearFilter AS (
+            -- Get the specific Year_ID for the year 2024
+            SELECT Year_ID
+            FROM Year
+            WHERE Year = 2024
+        ),
+        ClubCards AS (
+            -- Calculate yellow and red cards per club for the specific year
+            SELECT c.Club_Name, 
+                SUM(ps.Yellow_cards) AS yellow_cards,
+                SUM(ps.Red_cards) AS red_cards
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+            WHERE ps.Year_ID = (SELECT Year_ID FROM YearFilter)
+            GROUP BY c.Club_Name
+        )
+        SELECT Club_Name, yellow_cards, red_cards
+        FROM ClubCards
+        ORDER BY yellow_cards DESC, red_cards DESC;
+    """)
+    cards = cursor.fetchall()
+
+    # Close the database connection
+    connection.close()
+
+    # Pass the results to the template
+    return render_template(
+        'sql/subqueries_using_with.html', 
+        player_contributions = player_contributions,
+        ranking = ranking,
+        cards = cards
+    )
+
+
+
+@main.route('/olap_queries', methods=['GET'])
+def olap_queries():
+    # Connect to the database
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Query 1: UPDATE THIS!!!!
+    cursor.execute("""
+        SELECT c.Club_Name, p.Position, 
+            AVG(ps.Goals) AS avg_goals,
+            AVG(ps.Assists) AS avg_assists,
+            AVG(ps.Yellow_cards) AS avg_yellow_cards,
+            AVG(ps.Red_cards) AS avg_red_cards
+        FROM Player_stats ps
+        JOIN Player p ON ps.Player_ID = p.Player_ID
+        JOIN Club c ON p.Club_ID = c.Club_ID
+        GROUP BY c.Club_Name, p.Position
+        ORDER BY c.Club_Name, avg_goals DESC;
+    """)
+    club_performance = cursor.fetchall()
+
+    # Query 2: UPDATE THIS TEXT!!!
+    cursor.execute("""
+        WITH ClubGoals AS (
+            SELECT c.Club_Name, SUM(ps.Goals) AS total_goals
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+            GROUP BY c.Club_Name
+        ),
+        TotalGoals AS (
+            SELECT SUM(total_goals) AS overall_total_goals
+            FROM ClubGoals
+        )
+        SELECT cg.Club_Name, 
+            cg.total_goals,
+            ROUND((cg.total_goals * 100.0) / tg.overall_total_goals, 2) AS goal_percentage
+        FROM ClubGoals cg
+        CROSS JOIN TotalGoals tg
+        ORDER BY goal_percentage DESC;
+    """)
+    goal_percentage = cursor.fetchall()
+
+    # Query 3: UPDATE THIS TEXT!!!
+    cursor.execute("""
+        SELECT Player_First_Name, Player_Last_Name, Position, total_goals
+        FROM (
+            SELECT p.Player_First_Name, p.Player_Last_Name, p.Position, SUM(ps.Goals) AS total_goals,
+                ROW_NUMBER() OVER(PARTITION BY p.Position ORDER BY SUM(ps.Goals) DESC) AS position_rank
+            FROM Player p
+            JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+            JOIN Year y ON ps.Year_ID = y.Year_ID
+            WHERE ps.Passes > 20 AND y.Year = 2024
+            GROUP BY p.Position, p.Player_ID
+        ) AS ranked_players
+        WHERE position_rank <= 3
+        ORDER BY Position, total_goals DESC;
+    """)
+    top_three_players_per_position = cursor.fetchall()
+
+    # Close the database connection
+    connection.close()
+
+    # Pass the results to the template
+    return render_template(
+        'sql/olap_queries.html',
+        club_performance = club_performance,
+        goal_percentage = goal_percentage,
+        top_three_players_per_position = top_three_players_per_position
+    )
