@@ -63,15 +63,15 @@
         <div class="options-panel">
             <div class="option-row">
                 <button onclick="showQuery('query1')">Query 1</button>
-                UPDATE THIS TEXT.
+                Players contribution percentage by their club's total goals.
             </div>
             <div class="option-row">
                 <button onclick="showQuery('query2')">Query 2</button>
-                UPDATE THIS TEXT.
+                Player assists contribution percentage compared with their club's average assists.
             </div>
             <div class="option-row">
                 <button onclick="showQuery('query3')">Query 3</button>
-                UPDATE THIS TEXT.
+                Player age distribution by club.
             </div>
         </div>
 
@@ -96,26 +96,34 @@
             query1: {
                 code: 
 `WITH ClubTotalGoals AS (
-    -- Calculate total goals for each club
-    SELECT c.Club_ID, c.Club_Name, SUM(ps.Goals) AS club_total_goals
+    -- Calculate the total goals scored by each club
+    SELECT c.Club_ID, 
+           c.Club_Name, 
+           SUM(ps.Goals) AS club_total_goals
     FROM Player_stats ps
     JOIN Player p ON ps.Player_ID = p.Player_ID
     JOIN Club c ON p.Club_ID = c.Club_ID
     GROUP BY c.Club_ID, c.Club_Name
 ),
 PlayerContributions AS (
-    -- Calculate each player's goals and their club details
-    SELECT p.Player_ID, p.Player_First_Name, p.Player_Last_Name, 
-           ps.Goals, c.Club_ID, c.Club_Name
+    -- Retrieve individual player stats along with club details
+    SELECT p.Player_ID, 
+           p.Player_First_Name, 
+           p.Player_Last_Name, 
+           ps.Goals, 
+           c.Club_ID, 
+           c.Club_Name
     FROM Player_stats ps
     JOIN Player p ON ps.Player_ID = p.Player_ID
     JOIN Club c ON p.Club_ID = c.Club_ID
 )
--- Main query to combine player contributions with club totals
-SELECT pc.Player_First_Name, pc.Player_Last_Name, pc.Goals, 
-       pc.Club_Name, ctg.club_total_goals,
-       ROUND((pc.Goals / ctg.club_total_goals) * 100, 2) 
-       AS contribution_percentage
+-- Combine player contributions with club totals to calculate percentage contributions
+SELECT pc.Player_First_Name, 
+       pc.Player_Last_Name, 
+       pc.Goals, 
+       pc.Club_Name, 
+       ctg.club_total_goals,
+       ROUND((pc.Goals / ctg.club_total_goals) * 100, 2) AS contribution_percentage
 FROM PlayerContributions pc
 JOIN ClubTotalGoals ctg ON pc.Club_ID = ctg.Club_ID
 WHERE ctg.club_total_goals > 0  -- Ensures no division by zero
@@ -143,29 +151,61 @@ ORDER BY pc.Club_Name, contribution_percentage DESC;`,
             },
             query2: {
                 code: 
-`WITH RankedPlayers AS (
-    SELECT p.Player_First_Name, p.Player_Last_Name, ps.Assists,
-           DENSE_RANK() OVER(ORDER BY ps.Assists DESC) AS assist_rank
+`WITH PlayerContributions AS (
+    -- Retrieve player assists along with their club details
+    SELECT 
+        p.Player_First_Name, 
+        p.Player_Last_Name, 
+        ps.Assists, 
+        c.Club_Name
     FROM Player_stats ps
     JOIN Player p ON ps.Player_ID = p.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+),
+ClubAssistAverages AS (
+    -- Calculate the average number of assists for each club
+    SELECT 
+        c.Club_Name, 
+        AVG(ps.Assists) AS avg_club_assists
+    FROM Player_stats ps
+    JOIN Player p ON ps.Player_ID = p.Player_ID
+    JOIN Club c ON p.Club_ID = c.Club_ID
+    GROUP BY c.Club_Name
 )
-SELECT Player_First_Name, Player_Last_Name, Assists, assist_rank
-FROM RankedPlayers
-ORDER BY assist_rank, Assists DESC;`,
+-- Combine player contributions with their club's average assists
+-- Assists contributions to the club:
+-- High Contribution (>100%). The player’s assists exceed their club's average.
+-- Around 100% Contribution. The player’s assists are close to their club's average.
+-- Low Contribution (<100%). The player’s assists are below their club's average.
+SELECT 
+    pc.Player_First_Name, 
+    pc.Player_Last_Name, 
+    pc.Assists, 
+    pc.Club_Name, 
+    ca.avg_club_assists,
+    ROUND((pc.Assists / ca.avg_club_assists) * 100, 2) AS contribution_to_club_avg
+FROM PlayerContributions pc
+JOIN ClubAssistAverages ca ON pc.Club_Name = ca.Club_Name
+ORDER BY pc.Club_Name, contribution_to_club_avg DESC;
+`,
                 result: `<table class="table table-striped mt-3">
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th>Player Name</th>
                             <th>Assists</th>
-                            <th>Assist rank</th>
+                            <th>Club</th>
+                            <th>AVG Club assists</th>
+                            <th>Assists contribution %</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for rank in ranking %}
+                        {% for assists in assists_contribution %}
                             <tr>
-                                <td>{{ rank[0] }} {{ rank[1] }}</td>
-                                <td>{{ rank[2] }}</td>
-                                <td>{{ rank[3] }}</td>
+                                <td>{{ assists[0] }} {{ assists[1] }}</td>
+                                <td>{{ assists[2] }}</td>
+                                <td>{{ assists[3] }}</td>
+                                <td>{{ assists[4] }}</td>
+                                <td>{{ assists[5] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -174,39 +214,57 @@ ORDER BY assist_rank, Assists DESC;`,
             query3: {
                 code: 
 `WITH YearFilter AS (
-    -- Get the specific Year_ID for the year 2024
+    -- Filter for the specific year (e.g., 2024)
     SELECT Year_ID
     FROM Year
     WHERE Year = 2024
 ),
-ClubCards AS (
-    -- Calculate yellow and red cards per club for the specific year
-    SELECT c.Club_Name, 
-           SUM(ps.Yellow_cards) AS yellow_cards,
-           SUM(ps.Red_cards) AS red_cards
-    FROM Player_stats ps
-    JOIN Player p ON ps.Player_ID = p.Player_ID
+PlayerAges AS (
+    -- Calculate player ages for the current year
+    SELECT 
+        p.Player_ID,
+        p.Player_First_Name,
+        p.Player_Last_Name,
+        p.Birth_Date,
+        FLOOR(DATEDIFF(CURDATE(), p.Birth_Date) / 365.25) AS age,
+        c.Club_Name
+    FROM Player p
     JOIN Club c ON p.Club_ID = c.Club_ID
-    WHERE ps.Year_ID = (SELECT Year_ID FROM YearFilter)
-    GROUP BY c.Club_Name
+),
+ClubAgeStats AS (
+    -- Calculate age statistics for each club
+    SELECT 
+        pa.Club_Name,
+        ROUND(AVG(pa.age), 2) AS average_age,
+        MIN(pa.age) AS youngest_age,
+        MAX(pa.age) AS oldest_age
+    FROM PlayerAges pa
+    GROUP BY pa.Club_Name
 )
-SELECT Club_Name, yellow_cards, red_cards
-FROM ClubCards
-ORDER BY yellow_cards DESC, red_cards DESC;`,
+-- Display club-level player age distribution
+SELECT 
+    cas.Club_Name, 
+    cas.average_age, 
+    cas.youngest_age, 
+    cas.oldest_age
+FROM ClubAgeStats cas
+ORDER BY cas.average_age ASC;`,
                 result: `<table class="table table-striped mt-3">
                     <thead>
                         <tr>
                             <th>Club</th>
-                            <th>Yellow cards</th>
-                            <th>Red cards</th>
+                            <th>AVG age</th>
+                            <th>Youngest age</th>
+                            <th>Oldest age</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for card in cards %}
+                        {% for age_distribution in age %}
                             <tr>
-                                <td>{{ card[0] }}</td>
-                                <td>{{ card[1] }}</td>
-                                <td>{{ card[2] }}</td>
+                                <td>{{ age_distribution[0] }}</td>
+                                <td>{{ age_distribution[1] }}</td>
+                                <td>{{ age_distribution[2] }}</td>
+                                <td>{{ age_distribution[3] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

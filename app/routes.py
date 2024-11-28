@@ -1213,11 +1213,6 @@ def create_standing():
     return redirect(url_for('main.standings'))
 
 
-
-
-
-
-
 # Edit standing route
 @main.route('/standing/<int:standing_id>/edit', methods=['GET'])
 def edit_standing(standing_id):
@@ -1339,110 +1334,95 @@ def delete_standing(standing_id):
 
 #endregion
 
-# @main.route('/set_operations', methods=['GET'])
-# def set_operations():
-#     return render_template('sql/set_operations.html')
+#region
+# SQL coplex queries
 
-
-
-# @main.route('/set_operations', methods=['GET', 'POST'])
-# def set_operations():
-#     if request.method == 'POST':
-#         # Retrieve the number from the form data
-#         query = request.form.get('query_option')
-
-#         # Handle cases based on the value of `query`
-#         if query == '1':
-#             print("Hi")
-#             # Connect to the database and fetch set operations information
-#             connection = get_db_connection()
-#             cursor = connection.cursor()
-
-#             # Execute the SQL query to fetch top and bottom 5 players by goals for each club
-#             cursor.execute("""
-#                 SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
-#                 FROM (
-#                     SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
-#                            ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals DESC) AS player_rank
-#                     FROM Player p
-#                     JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
-#                     JOIN Club c ON p.Club_ID = c.Club_ID
-#                 ) AS ranked_players
-#                 WHERE player_rank <= 5 -- Top 5 players in each club
-#                 UNION
-#                 SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
-#                 FROM (
-#                     SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
-#                            ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals ASC) AS player_rank
-#                     FROM Player p
-#                     JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
-#                     JOIN Club c ON p.Club_ID = c.Club_ID
-#                 ) AS ranked_players
-#                 WHERE player_rank <= 5;
-#             """)
-#             set_operations = cursor.fetchall()
-#         elif query == '2':
-#             print("Yes")
-#         elif query == '3':
-#             print("NO")
-#         else:
-#             print("Invalid option")
-
-
-                    
-#         # Provide feedback to the user (optional)
-#         flash(f"Number {query} was sent to the server.", "info")
-    
-#     return render_template('sql/set_operations.html')
-
-
-
+# SQL - Complex Queries - Set Operations
 @main.route('/set_operations', methods=['GET'])
 def set_operations():
     # Connect to the database
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Query 1: Top and bottom 5 players by goals for each club
+    # Query 1: Top 5 outstanding performers and the top 5 consistent performers in each Club using set operations.
     cursor.execute("""
-        SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
-        FROM (
-            SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
-                    ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals DESC) AS player_rank
-            FROM Player p
-            JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
+        -- Step 1: Calculate the average goals for each club
+        WITH Club_Averages AS (
+            SELECT c.Club_Name, AVG(ps.Goals) AS Avg_Goals
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
             JOIN Club c ON p.Club_ID = c.Club_ID
-        ) AS ranked_players
-        WHERE player_rank <= 5 -- Top 5 players in each club
+            GROUP BY c.Club_Name
+        ),
+        -- Step 2: Compute each player's deviation from their club's average goals
+        Player_Deviation AS (
+            SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
+                ABS(ps.Goals - ca.Avg_Goals) AS Deviation
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+            JOIN Club_Averages ca ON c.Club_Name = ca.Club_Name
+        ),
+        -- Step 3: Rank players within each club based on their deviation
+        Ranked_Deviation AS (
+            SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals, Deviation,
+                ROW_NUMBER() OVER(PARTITION BY Club_Name ORDER BY Deviation DESC) AS deviation_rank,
+                ROW_NUMBER() OVER(PARTITION BY Club_Name ORDER BY Deviation ASC) AS consistency_rank
+            FROM Player_Deviation
+        )
+        -- Step 4: Select the top 5 outstanding performers and top 5 consistent performers
+        -- Combine the results into a unified table with a label for performer type
+        SELECT 
+            Player_First_Name, 
+            Player_Last_Name, 
+            Club_Name, 
+            Goals, 
+            Deviation, 
+            'Outstanding Performer' AS Performer_Type -- Label for outstanding performers
+        FROM Ranked_Deviation
+        WHERE deviation_rank <= 5 -- Most outstanding performers
         UNION
-        SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
-        FROM (
-            SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
-                    ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals ASC) AS player_rank
-            FROM Player p
-            JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
-            JOIN Club c ON p.Club_ID = c.Club_ID
-        ) AS ranked_players
-        WHERE player_rank <= 5
-        LIMIT 10;
+        SELECT 
+            Player_First_Name, 
+            Player_Last_Name, 
+            Club_Name, 
+            Goals, 
+            Deviation, 
+            'Consistent Performer' AS Performer_Type
+        FROM Ranked_Deviation
+        WHERE consistency_rank <= 5; -- Top 5 most consistent performers
     """)
     set_operations = cursor.fetchall()
 
-    # Query 2: Players born after January 1, 1995, with recorded stats
+    # Query 2: Clubs with above-average performance per competition and year using set membership.
     cursor.execute("""
-        SELECT Player_First_Name, Player_Last_Name, Birth_Date
-        FROM Player
-        WHERE Player_ID IN (
-            SELECT Player_ID
-            FROM Player_stats
-        )
-        AND Birth_Date > '1995-01-01'
-        ORDER BY Birth_Date DESC
-        LIMIT 10;
+        SELECT 
+            c.Club_Name,           
+            comp.Competition_Name, 
+            y.Year,                
+            cs.Total_Wins          
+        FROM 
+            Club_stats cs          
+        JOIN 
+            Club c ON cs.Club_ID = c.Club_ID          
+        JOIN 
+            Competition comp ON cs.Competition_ID = comp.Competition_ID 
+        JOIN 
+            Year y ON cs.Year_ID = y.Year_ID          
+        WHERE 
+            cs.Total_Wins > (       -- Only include clubs with total wins greater than the average for their competition
+                SELECT AVG(Total_Wins)               -- Calculate the average total wins
+                FROM Club_stats cs_avg               -- Subquery on the same table
+                WHERE cs_avg.Competition_ID = cs.Competition_ID -- Restrict to the same competition
+            )
+        ORDER BY 
+            comp.Competition_Name, -- Sort the results by competition name alphabetically
+            y.Year,                -- Then sort by year in ascending order
+            cs.Total_Wins DESC;    -- Finally, sort by total wins in descending order
     """)
     set_membership = cursor.fetchall()
 
-    # Query 3: Top 10 players with the highest total goals
+    # Query 3: Top 10 players with the highest total goals historically using set comparison.
     cursor.execute("""
         SELECT p.Player_First_Name, p.Player_Last_Name, SUM(ps.Goals) AS total_goals
         FROM Player p
@@ -1465,36 +1445,43 @@ def set_operations():
     )
 
 
-
-
-
+# SQL - Complex Queries - Subqueries using WITH clause
 @main.route('/subqueries_using_with', methods=['GET'])
 def subqueries_using_with():
     # Connect to the database
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Query 1: Top and bottom 5 players by goals for each club UPDATE THIS!!!!
+    # Query 1: Players contribution percentage by their club's total goals.
     cursor.execute("""
         WITH ClubTotalGoals AS (
-            -- Calculate total goals for each club
-            SELECT c.Club_ID, c.Club_Name, SUM(ps.Goals) AS club_total_goals
+            -- Calculate the total goals scored by each club
+            SELECT c.Club_ID, 
+                c.Club_Name, 
+                SUM(ps.Goals) AS club_total_goals
             FROM Player_stats ps
             JOIN Player p ON ps.Player_ID = p.Player_ID
             JOIN Club c ON p.Club_ID = c.Club_ID
             GROUP BY c.Club_ID, c.Club_Name
         ),
         PlayerContributions AS (
-            -- Calculate each player's goals and their club details
-            SELECT p.Player_ID, p.Player_First_Name, p.Player_Last_Name, ps.Goals, 
-                c.Club_ID, c.Club_Name
+            -- Retrieve individual player stats along with club details
+            SELECT p.Player_ID, 
+                p.Player_First_Name, 
+                p.Player_Last_Name, 
+                ps.Goals, 
+                c.Club_ID, 
+                c.Club_Name
             FROM Player_stats ps
             JOIN Player p ON ps.Player_ID = p.Player_ID
             JOIN Club c ON p.Club_ID = c.Club_ID
         )
-        -- Main query to combine player contributions with club totals
-        SELECT pc.Player_First_Name, pc.Player_Last_Name, pc.Goals, 
-            pc.Club_Name, ctg.club_total_goals,
+        -- Combine player contributions with club totals to calculate percentage contributions
+        SELECT pc.Player_First_Name, 
+            pc.Player_Last_Name, 
+            pc.Goals, 
+            pc.Club_Name, 
+            ctg.club_total_goals,
             ROUND((pc.Goals / ctg.club_total_goals) * 100, 2) AS contribution_percentage
         FROM PlayerContributions pc
         JOIN ClubTotalGoals ctg ON pc.Club_ID = ctg.Club_ID
@@ -1503,44 +1490,87 @@ def subqueries_using_with():
     """)
     player_contributions = cursor.fetchall()
 
-    # Query 2: UPDATE THIS TEXT!!!
+    # Query 2: Player assists contribution percentage compared with their club's average assists.
     cursor.execute("""
-        WITH RankedPlayers AS (
-            SELECT p.Player_First_Name, p.Player_Last_Name, ps.Assists,
-                DENSE_RANK() OVER(ORDER BY ps.Assists DESC) AS assist_rank
+        WITH PlayerContributions AS (
+            -- Retrieve player assists along with their club details
+            SELECT 
+                p.Player_First_Name, 
+                p.Player_Last_Name, 
+                ps.Assists, 
+                c.Club_Name
             FROM Player_stats ps
             JOIN Player p ON ps.Player_ID = p.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+        ),
+        ClubAssistAverages AS (
+            -- Calculate the average number of assists for each club
+            SELECT 
+                c.Club_Name, 
+                AVG(ps.Assists) AS avg_club_assists
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+            GROUP BY c.Club_Name
         )
-        SELECT Player_First_Name, Player_Last_Name, Assists, assist_rank
-        FROM RankedPlayers
-        ORDER BY assist_rank, Assists DESC;
+        -- Combine player contributions with their club's average assists
+        -- Assists contributions to the club:
+        -- High Contribution (>100%). The player’s assists exceed their club's average.
+        -- Around 100% Contribution. The player’s assists are close to their club's average.
+        -- Low Contribution (<100%). The player’s assists are below their club's average.
+        SELECT 
+            pc.Player_First_Name, 
+            pc.Player_Last_Name, 
+            pc.Assists, 
+            pc.Club_Name, 
+            ca.avg_club_assists,
+            ROUND((pc.Assists / ca.avg_club_assists) * 100, 2) AS contribution_to_club_avg
+        FROM PlayerContributions pc
+        JOIN ClubAssistAverages ca ON pc.Club_Name = ca.Club_Name
+        ORDER BY pc.Club_Name, contribution_to_club_avg DESC;
     """)
-    ranking = cursor.fetchall()
+    assists_contribution = cursor.fetchall()
 
-    # Query 3: UPDATE THIS TEXT!!!
+    # Query 3: Player age distribution by club.
     cursor.execute("""
         WITH YearFilter AS (
-            -- Get the specific Year_ID for the year 2024
+            -- Filter for the specific year (e.g., 2024)
             SELECT Year_ID
             FROM Year
             WHERE Year = 2024
         ),
-        ClubCards AS (
-            -- Calculate yellow and red cards per club for the specific year
-            SELECT c.Club_Name, 
-                SUM(ps.Yellow_cards) AS yellow_cards,
-                SUM(ps.Red_cards) AS red_cards
-            FROM Player_stats ps
-            JOIN Player p ON ps.Player_ID = p.Player_ID
+        PlayerAges AS (
+            -- Calculate player ages for the current year
+            SELECT 
+                p.Player_ID,
+                p.Player_First_Name,
+                p.Player_Last_Name,
+                p.Birth_Date,
+                FLOOR(DATEDIFF(CURDATE(), p.Birth_Date) / 365.25) AS age,
+                c.Club_Name
+            FROM Player p
             JOIN Club c ON p.Club_ID = c.Club_ID
-            WHERE ps.Year_ID = (SELECT Year_ID FROM YearFilter)
-            GROUP BY c.Club_Name
+        ),
+        ClubAgeStats AS (
+            -- Calculate age statistics for each club
+            SELECT 
+                pa.Club_Name,
+                ROUND(AVG(pa.age), 2) AS average_age,
+                MIN(pa.age) AS youngest_age,
+                MAX(pa.age) AS oldest_age
+            FROM PlayerAges pa
+            GROUP BY pa.Club_Name
         )
-        SELECT Club_Name, yellow_cards, red_cards
-        FROM ClubCards
-        ORDER BY yellow_cards DESC, red_cards DESC;
+        -- Display club-level player age distribution
+        SELECT 
+            cas.Club_Name, 
+            cas.average_age, 
+            cas.youngest_age, 
+            cas.oldest_age
+        FROM ClubAgeStats cas
+        ORDER BY cas.average_age ASC;
     """)
-    cards = cursor.fetchall()
+    age = cursor.fetchall()
 
     # Close the database connection
     connection.close()
@@ -1549,34 +1579,36 @@ def subqueries_using_with():
     return render_template(
         'sql/subqueries_using_with.html', 
         player_contributions = player_contributions,
-        ranking = ranking,
-        cards = cards
+        assists_contribution = assists_contribution,
+        age = age
     )
 
 
-
+# SQL - Complex Queries - OLAP Queries
 @main.route('/olap_queries', methods=['GET'])
 def olap_queries():
     # Connect to the database
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Query 1: UPDATE THIS!!!!
+    # Query 1: Performance and discipline analysis by club and position.
     cursor.execute("""
-        SELECT c.Club_Name, p.Position, 
-            AVG(ps.Goals) AS avg_goals,
-            AVG(ps.Assists) AS avg_assists,
-            AVG(ps.Yellow_cards) AS avg_yellow_cards,
-            AVG(ps.Red_cards) AS avg_red_cards
+        SELECT 
+            c.Club_Name, 
+            p.Position, 
+            AVG(ps.Goals) AS avg_goals, -- Average number of goals scored by players in the position
+            AVG(ps.Assists) AS avg_assists, -- Average number of assists made by players in the position
+            AVG(ps.Yellow_cards) AS avg_yellow_cards, -- Average number of yellow cards received by players
+            AVG(ps.Red_cards) AS avg_red_cards -- Average number of red cards received by players
         FROM Player_stats ps
-        JOIN Player p ON ps.Player_ID = p.Player_ID
-        JOIN Club c ON p.Club_ID = c.Club_ID
-        GROUP BY c.Club_Name, p.Position
-        ORDER BY c.Club_Name, avg_goals DESC;
+        JOIN Player p ON ps.Player_ID = p.Player_ID -- Join to link player stats with player details
+        JOIN Club c ON p.Club_ID = c.Club_ID -- Join to associate players with their respective clubs
+        GROUP BY c.Club_Name, p.Position -- Group data by club and player position
+        ORDER BY c.Club_Name, avg_goals DESC; -- Sort results by club name and highest average goals
     """)
     club_performance = cursor.fetchall()
 
-    # Query 2: UPDATE THIS TEXT!!!
+    # Query 2: Club goal contribution historically.
     cursor.execute("""
         WITH ClubGoals AS (
             SELECT c.Club_Name, SUM(ps.Goals) AS total_goals
@@ -1598,22 +1630,53 @@ def olap_queries():
     """)
     goal_percentage = cursor.fetchall()
 
-    # Query 3: UPDATE THIS TEXT!!!
+    # Query 3: Club performance by Competition and Year.
     cursor.execute("""
-        SELECT Player_First_Name, Player_Last_Name, Position, total_goals
-        FROM (
-            SELECT p.Player_First_Name, p.Player_Last_Name, p.Position, SUM(ps.Goals) AS total_goals,
-                ROW_NUMBER() OVER(PARTITION BY p.Position ORDER BY SUM(ps.Goals) DESC) AS position_rank
-            FROM Player p
-            JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
-            JOIN Year y ON ps.Year_ID = y.Year_ID
-            WHERE ps.Passes > 20 AND y.Year = 2024
-            GROUP BY p.Position, p.Player_ID
-        ) AS ranked_players
-        WHERE position_rank <= 3
-        ORDER BY Position, total_goals DESC;
+        WITH ClubPerformance AS (
+            -- Calculate total wins, losses, and draws for each club in each competition and year
+            SELECT 
+                c.Club_Name,
+                y.Year,
+                co.Competition_Name,
+                cs.Total_Wins,
+                cs.Total_Losses,
+                cs.Total_Draws,
+                (cs.Total_Wins + cs.Total_Losses + cs.Total_Draws) AS total_matches,
+                ROUND((cs.Total_Wins * 100.0) / NULLIF((cs.Total_Wins + cs.Total_Losses + cs.Total_Draws), 0), 2) AS win_percentage
+            FROM Club_stats cs
+            JOIN Club c ON cs.Club_ID = c.Club_ID
+            JOIN Year y ON cs.Year_ID = y.Year_ID
+            JOIN Competition co ON cs.Competition_ID = co.Competition_ID
+        ),
+        RankedPerformance AS (
+            -- Rank clubs for each year and competition based on their win percentage
+            SELECT 
+                cp.Club_Name,
+                cp.Year,
+                cp.Competition_Name,
+                cp.Total_Wins,
+                cp.Total_Losses,
+                cp.Total_Draws,
+                cp.total_matches,
+                cp.win_percentage,
+                RANK() OVER(PARTITION BY cp.Year, cp.Competition_Name ORDER BY cp.win_percentage DESC) AS performance_rank
+            FROM ClubPerformance cp
+        )
+        -- Retrieve club performance statistics across all available years and competitions
+        SELECT 
+            rp.Year,
+            rp.Competition_Name,
+            rp.Club_Name,
+            rp.Total_Wins,
+            rp.Total_Losses,
+            rp.Total_Draws,
+            rp.total_matches,
+            rp.win_percentage,
+            rp.performance_rank
+        FROM RankedPerformance rp
+        ORDER BY rp.Year DESC, rp.Competition_Name ASC, rp.performance_rank ASC, rp.win_percentage DESC;
     """)
-    top_three_players_per_position = cursor.fetchall()
+    club_winning_rate = cursor.fetchall()
 
     # Close the database connection
     connection.close()
@@ -1623,5 +1686,7 @@ def olap_queries():
         'sql/olap_queries.html',
         club_performance = club_performance,
         goal_percentage = goal_percentage,
-        top_three_players_per_position = top_three_players_per_position
+        club_winning_rate = club_winning_rate
     )
+
+#endregion

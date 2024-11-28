@@ -36,7 +36,7 @@
         width: 100%;
     }
     .query-code {
-        width: 70%;
+        width: 50%;
         padding: 20px;
         border-right: 1px solid #ddd;
         background-color: #fafafa;
@@ -49,7 +49,7 @@
         overflow-x: auto;
     }
     .query-result {
-        width: 40%;
+        width: 50%;
         padding: 20px;
     }
 </style>
@@ -63,15 +63,15 @@
         <div class="options-panel">
             <div class="option-row">
                 <button onclick="showQuery('query1')">Query 1</button>
-                List the top 5 goal scorers from each club using set operations.
+                Top 5 outstanding performers and the top 5 consistent performers in each Club using set operations.
             </div>
             <div class="option-row">
                 <button onclick="showQuery('query2')">Query 2</button>
-                List players born after January 1, 1995 using set membership.
+                Clubs with above-average performance per competition and year using set membership.
             </div>
             <div class="option-row">
                 <button onclick="showQuery('query3')">Query 3</button>
-                List the top 10 players with the highest total goals historically using set comparison.
+                Top 10 players with the highest total goals historically using set comparison.
             </div>
         </div>
 
@@ -95,44 +95,78 @@
         const queries = {
             query1: {
                 code: 
-`SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
-FROM (
-    SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
-           ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals DESC) 
-           AS player_rank
-    FROM Player p
-    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
-    JOIN Club c ON p.Club_ID = c.Club_ID
-) AS ranked_players
-WHERE player_rank <= 5 -- Top 5 players in each club
-UNION
-SELECT Player_First_Name, Player_Last_Name, Club_Name, Goals
-FROM (
-    SELECT p.Player_First_Name, p.Player_Last_Name, c.Club_Name, ps.Goals,
-           ROW_NUMBER() OVER(PARTITION BY c.Club_Name ORDER BY ps.Goals ASC) 
-           AS player_rank
-    FROM Player p
-    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
-    JOIN Club c ON p.Club_ID = c.Club_ID
-) AS ranked_players
-WHERE player_rank <= 5
-Limit 10;`,
+`-- Step 1: Calculate the average goals for each club
+        WITH Club_Averages AS (
+            SELECT c.Club_Name, AVG(ps.Goals) AS Avg_Goals
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+            GROUP BY c.Club_Name
+        ),
+        -- Step 2: Compute each player's deviation from their 
+        -- club's average goals
+        Player_Deviation AS (
+            SELECT p.Player_First_Name, p.Player_Last_Name, 
+                c.Club_Name, ps.Goals,
+                ABS(ps.Goals - ca.Avg_Goals) AS Deviation
+            FROM Player_stats ps
+            JOIN Player p ON ps.Player_ID = p.Player_ID
+            JOIN Club c ON p.Club_ID = c.Club_ID
+            JOIN Club_Averages ca ON c.Club_Name = ca.Club_Name
+        ),
+        -- Step 3: Rank players within each club based on their 
+        -- deviation
+        Ranked_Deviation AS (
+            SELECT Player_First_Name, Player_Last_Name, 
+                Club_Name, Goals, Deviation,
+                ROW_NUMBER() OVER(PARTITION BY Club_Name ORDER 
+                BY Deviation DESC) AS deviation_rank,
+                ROW_NUMBER() OVER(PARTITION 
+                BY Club_Name ORDER BY Deviation ASC) 
+                AS consistency_rank
+            FROM Player_Deviation
+        )
+        -- Step 4: Select the top 5 outstanding performers and 
+        -- top 5 consistent performers
+        -- Combine the results into a unified table with a label 
+        -- for performer type
+        SELECT 
+            Player_First_Name, 
+            Player_Last_Name, 
+            Club_Name, 
+            Goals, 
+            Deviation, 
+            'Outstanding Performer' AS Performer_Type -- Label for outstanding performers
+        FROM Ranked_Deviation
+        WHERE deviation_rank <= 5 -- Most outstanding performers
+        UNION
+        SELECT 
+            Player_First_Name, 
+            Player_Last_Name, 
+            Club_Name, 
+            Goals, 
+            Deviation, 
+            'Consistent Performer' AS Performer_Type
+        FROM Ranked_Deviation
+        WHERE consistency_rank <= 5; -- Top 5 most consistent performers`,
                 result: `<table class="table table-striped mt-3">
                     <thead>
                         <tr>
-                            <th>First Name</th>
-                            <th>Last Name</th>
+                            <th>Player Name</th>
                             <th>Club</th>
                             <th>Goals</th>
+                            <th>Deviation</th>
+                            <th>Performer type</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for operation in set_operations %}
                             <tr>
-                                <td>{{ operation[0] }}</td>
-                                <td>{{ operation[1] }}</td>
+                                <td>{{ operation[0] }} {{ operation[1] }}</td>
                                 <td>{{ operation[2] }}</td>
                                 <td>{{ operation[3] }}</td>
+                                <td>{{ operation[4] }}</td>
+                                <td>{{ operation[5] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -140,21 +174,32 @@ Limit 10;`,
             },
             query2: {
                 code: 
-`SELECT Player_First_Name, Player_Last_Name, Birth_Date
-FROM Player
-WHERE Player_ID IN (
-    SELECT Player_ID
-    FROM Player_stats
-)
-AND Birth_Date > '1995-01-01'
-ORDER BY Birth_Date DESC
-LIMIT 10;`,
+`SELECT c.Club_Name, comp.Competition_Name, y.Year, cs.Total_Wins          
+FROM 
+    Club_stats cs          
+JOIN 
+    Club c ON cs.Club_ID = c.Club_ID          
+JOIN 
+    Competition comp ON cs.Competition_ID = comp.Competition_ID 
+JOIN 
+    Year y ON cs.Year_ID = y.Year_ID          
+WHERE 
+    cs.Total_Wins > (  -- Only include clubs with total wins greater than the average for their competition
+        SELECT AVG(Total_Wins)  -- Calculate the average total wins
+        FROM Club_stats cs_avg  -- Subquery on the same table
+        WHERE cs_avg.Competition_ID = cs.Competition_ID -- Restrict to the same competition
+    )
+ORDER BY 
+    comp.Competition_Name, -- Sort the results by competition name alphabetically
+    y.Year,                -- Then sort by year in ascending order
+    cs.Total_Wins DESC;    -- Finally, sort by total wins in descending order`,
                 result: `<table class="table table-striped mt-3">
                     <thead>
                         <tr>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Birt date</th>
+                            <th>Club</th>
+                            <th>Competition</th>
+                            <th>Year</th>
+                            <th>Total Wins</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -163,6 +208,7 @@ LIMIT 10;`,
                                 <td>{{ member[0] }}</td>
                                 <td>{{ member[1] }}</td>
                                 <td>{{ member[2] }}</td>
+                                <td>{{ member[3] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -183,16 +229,14 @@ ORDER BY TopGoals.total_goals DESC;`,
                 result: `<table class="table table-striped mt-3">
                     <thead>
                         <tr>
-                            <th>First Name</th>
-                            <th>Last Name</th>
+                            <th>Player Name</th>
                             <th>Goals</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for comparison in set_comparison %}
                             <tr>
-                                <td>{{ comparison[0] }}</td>
-                                <td>{{ comparison[1] }}</td>
+                                <td>{{ comparison[0] }} {{ comparison[1] }}</td>
                                 <td>{{ comparison[2] }}</td>
                             </tr>
                         {% endfor %}

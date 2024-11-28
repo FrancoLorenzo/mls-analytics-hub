@@ -63,15 +63,15 @@
         <div class="options-panel">
             <div class="option-row">
                 <button onclick="showQuery('query1')">Query 1</button>
-                UPDATE THIS TEXT.
+                Performance and discipline analysis by club and position.
             </div>
             <div class="option-row">
                 <button onclick="showQuery('query2')">Query 2</button>
-                UPDATE THIS TEXT.
+                Club goal contribution historically. 
             </div>
             <div class="option-row">
                 <button onclick="showQuery('query3')">Query 3</button>
-                UPDATE THIS TEXT.
+                Club performance by Competition and Year.
             </div>
         </div>
 
@@ -95,16 +95,18 @@
         const queries = {
             query1: {
                 code: 
-`SELECT c.Club_Name, p.Position, 
-       AVG(ps.Goals) AS avg_goals,
-       AVG(ps.Assists) AS avg_assists,
-       AVG(ps.Yellow_cards) AS avg_yellow_cards,
-       AVG(ps.Red_cards) AS avg_red_cards
+`SELECT 
+    c.Club_Name, 
+    p.Position, 
+    AVG(ps.Goals) AS avg_goals, -- Average number of goals scored by players in the position
+    AVG(ps.Assists) AS avg_assists, -- Average number of assists made by players in the position
+    AVG(ps.Yellow_cards) AS avg_yellow_cards, -- Average number of yellow cards received by players
+    AVG(ps.Red_cards) AS avg_red_cards -- Average number of red cards received by players
 FROM Player_stats ps
-JOIN Player p ON ps.Player_ID = p.Player_ID
-JOIN Club c ON p.Club_ID = c.Club_ID
-GROUP BY c.Club_Name, p.Position
-ORDER BY c.Club_Name, avg_goals DESC;`,
+JOIN Player p ON ps.Player_ID = p.Player_ID -- Join to link player stats with player details
+JOIN Club c ON p.Club_ID = c.Club_ID -- Join to associate players with their respective clubs
+GROUP BY c.Club_Name, p.Position -- Group data by club and player position
+ORDER BY c.Club_Name, avg_goals DESC; -- Sort results by club name and highest average goals`,
                 result: `<table class="table table-striped mt-3">
                     <thead>
                         <tr>
@@ -133,24 +135,29 @@ ORDER BY c.Club_Name, avg_goals DESC;`,
             query2: {
                 code: 
 `WITH ClubGoals AS (
-    SELECT c.Club_Name, SUM(ps.Goals) AS total_goals
+    -- Calculate total goals scored by each club
+    SELECT 
+        c.Club_Name, 
+        SUM(ps.Goals) AS total_goals -- Sum of all goals scored by players in the club
     FROM Player_stats ps
-    JOIN Player p ON ps.Player_ID = p.Player_ID
-    JOIN Club c ON p.Club_ID = c.Club_ID
-    GROUP BY c.Club_Name
+    JOIN Player p ON ps.Player_ID = p.Player_ID -- Join Player_stats with Player to associate stats with players
+    JOIN Club c ON p.Club_ID = c.Club_ID -- Join Player with Club to associate players with their clubs
+    GROUP BY c.Club_Name -- Group by club to aggregate goals at the club level
 ),
 TotalGoals AS (
-    SELECT SUM(total_goals) AS overall_total_goals
+    -- Calculate the total number of goals scored across all clubs
+    SELECT 
+        SUM(total_goals) AS overall_total_goals -- Total goals scored by all clubs combined
     FROM ClubGoals
 )
-SELECT cg.Club_Name, 
-       cg.total_goals,
-       ROUND((cg.total_goals * 100.0) / 
-       tg.overall_total_goals, 2) 
-       AS goal_percentage
+-- Calculate the percentage contribution of each club's goals to the league's total goals
+SELECT 
+    cg.Club_Name, 
+    cg.total_goals, -- Total goals scored by the club
+    ROUND((cg.total_goals * 100.0) / tg.overall_total_goals, 2) AS goal_percentage -- Percentage of total league goals
 FROM ClubGoals cg
-CROSS JOIN TotalGoals tg
-ORDER BY goal_percentage DESC;`,
+CROSS JOIN TotalGoals tg -- Cross join to include the overall total goals for percentage calculation
+ORDER BY goal_percentage DESC; -- Sort clubs by their goal contribution percentage in descending order`,
                 result: `<table class="table table-striped mt-3">
                     <thead>
                         <tr>
@@ -172,36 +179,75 @@ ORDER BY goal_percentage DESC;`,
             },
             query3: {
                 code: 
-`SELECT Player_First_Name, Player_Last_Name, Position, 
-total_goals
-FROM (
-    SELECT p.Player_First_Name, p.Player_Last_Name, p.Position, 
-        SUM(ps.Goals) AS total_goals, ROW_NUMBER() 
-        OVER(PARTITION BY p.Position ORDER BY SUM(ps.Goals) 
-        DESC) 
-        AS position_rank
-    FROM Player p
-    JOIN Player_stats ps ON p.Player_ID = ps.Player_ID
-    JOIN Year y ON ps.Year_ID = y.Year_ID
-    WHERE ps.Passes > 20 AND y.Year = 2024
-    GROUP BY p.Position, p.Player_ID
-) AS ranked_players
-WHERE position_rank <= 3
-ORDER BY Position, total_goals DESC;`,
+`WITH ClubPerformance AS (
+    -- Calculate total wins, losses, and draws for each club in each competition and year
+    SELECT 
+        c.Club_Name,
+        y.Year,
+        co.Competition_Name,
+        cs.Total_Wins,
+        cs.Total_Losses,
+        cs.Total_Draws,
+        (cs.Total_Wins + cs.Total_Losses + cs.Total_Draws) AS total_matches,
+        ROUND((cs.Total_Wins * 100.0) / NULLIF((cs.Total_Wins + cs.Total_Losses + cs.Total_Draws), 0), 2) AS win_percentage
+    FROM Club_stats cs
+    JOIN Club c ON cs.Club_ID = c.Club_ID
+    JOIN Year y ON cs.Year_ID = y.Year_ID
+    JOIN Competition co ON cs.Competition_ID = co.Competition_ID
+),
+RankedPerformance AS (
+    -- Rank clubs for each year and competition based on their win percentage
+    SELECT 
+        cp.Club_Name,
+        cp.Year,
+        cp.Competition_Name,
+        cp.Total_Wins,
+        cp.Total_Losses,
+        cp.Total_Draws,
+        cp.total_matches,
+        cp.win_percentage,
+        RANK() OVER(PARTITION BY cp.Year, cp.Competition_Name ORDER BY cp.win_percentage DESC) AS performance_rank
+    FROM ClubPerformance cp
+)
+-- Retrieve club performance statistics across all available years and competitions
+SELECT 
+    rp.Year,
+    rp.Competition_Name,
+    rp.Club_Name,
+    rp.Total_Wins,
+    rp.Total_Losses,
+    rp.Total_Draws,
+    rp.total_matches,
+    rp.win_percentage,
+    rp.performance_rank
+FROM RankedPerformance rp
+ORDER BY rp.Year DESC, rp.Competition_Name ASC, rp.performance_rank ASC, rp.win_percentage DESC;`,
                 result: `<table class="table table-striped mt-3">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Position</th>
-                            <th>Total goals</th>
+                            <th>Year</th>
+                            <th>Competition</th>
+                            <th>Club</th>
+                            <th>Total Wins</th>
+                            <th>Total Loses</th>
+                            <th>Total Draws</th>
+                            <th>Total Matches</th>
+                            <th>Win %</th>
+                            <th>Performance Rank</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for top_player in top_three_players_per_position %}
+                        {% for winning_rate in club_winning_rate %}
                             <tr>
-                                <td>{{ top_player[0] }} {{ top_player[1] }}</td>
-                                <td>{{ top_player[2] }}</td>
-                                <td>{{ top_player[3] }}</td>
+                                <td>{{ winning_rate[0] }}</td>
+                                <td>{{ winning_rate[1] }}</td>
+                                <td>{{ winning_rate[2] }}</td>
+                                <td>{{ winning_rate[3] }}</td>
+                                <td>{{ winning_rate[4] }}</td>
+                                <td>{{ winning_rate[5] }}</td>
+                                <td>{{ winning_rate[6] }}</td>
+                                <td>{{ winning_rate[7] }}</td>
+                                <td>{{ winning_rate[8] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
